@@ -18,6 +18,6 @@ func Stat(filename string) (*FileInfo, error) {
 
 	return &FileInfo{
 		FileInfo:   fi,
-		CreateTime: time.Unix(fileinfo.Ctim.Sec, fileinfo.Ctim.Nsec),
+		CreateTime: time.Unix(int64(fileinfo.Ctim.Sec), int64(fileinfo.Ctim.Nsec)),
 	}, nil
 }
