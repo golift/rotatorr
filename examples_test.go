@@ -16,8 +16,7 @@ import (
 // This examples shows how to create backup logs files just like
 // https://github.com/natefinch/lumberjack
 // This will rotate files at 100Mb and keep all old files (no cleanup).
-// Backup log files are named with a time stamp.
-// Compression isn't a thing here yet.
+// Backup log files are named with a time stamp. Compression isn't enabled.
 func Example_lumberjack() {
 	log.SetOutput(rotatorr.NewMust(&rotatorr.Config{
 		Filepath: "/var/log/file.log", // optional.

@@ -6,4 +6,7 @@ install:
   - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin latest
 script:
   - go test -covermode=atomic ./...
-  - golangci-lint run --enable-all -D exhaustivestruct
+  - GOOS=darwin golangci-lint run --enable-all -D exhaustivestruct
+  - GOOS=linux golangci-lint run --enable-all -D exhaustivestruct
+  - GOOS=windows golangci-lint run --enable-all -D exhaustivestruct
+  - GOOS=freebsd golangci-lint run --enable-all -D exhaustivestruct

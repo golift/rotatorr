@@ -44,6 +44,7 @@ const (
 	GZext         = ".gz"
 )
 
+// Post satisfies the Rotatorr interface.
 func (l *Layout) Post(fileName, newFile string) {
 	if l.PostRotate != nil {
 		l.PostRotate(fileName, newFile)

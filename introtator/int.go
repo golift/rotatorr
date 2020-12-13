@@ -21,8 +21,11 @@ import (
 	"golift.io/rotatorr/filer"
 )
 
+// Order defines which direction the files are written in.
 type Order uint8
 
+// Ascending order writes files 1-10 in sequence.
+// Descending order writes them 10-1 in sequence.
 const (
 	Ascending Order = iota
 	Descending
@@ -75,6 +78,7 @@ func (l *Layout) Rotate(fileName string) (string, error) {
 	}
 }
 
+// Dirs checks our config and returns the folder for rotatorr library to create them.
 func (l *Layout) Dirs(fileName string) ([]string, error) {
 	if l.Filer == nil {
 		l.Filer = filer.Default()
@@ -92,6 +96,7 @@ func (l *Layout) Dirs(fileName string) ([]string, error) {
 	}
 }
 
+// Post satisfies the Rotatorr interface.
 func (l *Layout) Post(fileName, newFile string) {
 	if l.PostRotate != nil {
 		l.PostRotate(fileName, newFile)

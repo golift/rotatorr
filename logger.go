@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
-	"strings"
 	"time"
 
 	"golift.io/rotatorr/filer"
@@ -107,9 +107,8 @@ func (l *Logger) initialize(ignoreErrors bool) (err error) {
 // setConfigDefaults does exactly what it says. Sets missing values.
 func (l *Logger) setConfigDefaults() error {
 	if l.config.Filepath == "" {
-		pkgparts := strings.Split(reflect.TypeOf(Logger{}).PkgPath(), "/")
 		l.config.Filepath = filepath.Join(os.TempDir(),
-			filepath.Base(os.Args[0])+"-"+pkgparts[len(pkgparts)-1]+".log")
+			filepath.Base(os.Args[0])+"-"+path.Dir(reflect.TypeOf(Logger{}).PkgPath())+".log")
 	}
 
 	if l.config.Every == 0 && l.config.FileSize == 0 {

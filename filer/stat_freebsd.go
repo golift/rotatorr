@@ -14,8 +14,10 @@ func Stat(filename string) (*FileInfo, error) {
 		return nil, fmt.Errorf("stat err: %w", err)
 	}
 
+	fileinfo := fi.Sys().(*syscall.Stat_t)
+
 	return &FileInfo{
 		FileInfo:   fi,
-		CreateTime: time.Unix(0, fi.Sys().(*syscall.Win32FileAttributeData).CreationTime.Nanoseconds()),
+		CreateTime: time.Unix(fileinfo.Ctimespec.Sec, fileinfo.Ctimespec.Nsec),
 	}, nil
 }
