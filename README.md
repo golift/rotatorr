@@ -3,10 +3,11 @@
 
 ## Go App Log Rotation!
 
-[![GoDoc](https://godoc.org/golift.io/rotatorr/svc?status.svg)](https://godoc.org/golift.io/rotatorr) [![MIT License](http://img.shields.io/:license-mit-blue.svg)](https://github.com/golift/rotatorr/blob/master/LICENSE) [![Go Report Card](https://goreportcard.com/badge/golift.io/rotatorr)](https://goreportcard.com/report/golift.io/rotatorr)
+[![GoDoc](https://godoc.org/golift.io/rotatorr/svc?status.svg)](https://godoc.org/golift.io/rotatorr)
+[![Go Report Card](https://goreportcard.com/badge/golift.io/rotatorr)](https://goreportcard.com/report/golift.io/rotatorr)
+[![MIT License](http://img.shields.io/:license-mit-blue.svg)](https://github.com/golift/rotatorr/blob/master/LICENSE)
 [![travis](https://travis-ci.org/golift/rotatorr.svg?branch=main "Travis Tests")](https://travis-ci.org/golift/rotatorr)
 [![discord](https://badgen.net/badge/icon/Discord?color=0011ff&label&icon=https://simpleicons.now.sh/discord/eee "GoLift Discord")](https://golift.io/discord)
-
 
 ### Description
 
