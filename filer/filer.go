@@ -36,7 +36,7 @@ type FileInfo struct {
 // File can be embedded in a custom type to provide the missing methods for the Filer interface.
 type File struct{}
 
-// Removes provides os.Remove.
+// Remove provides os.Remove.
 func (f *File) Remove(fileName string) error {
 	return os.Remove(fileName)
 }
@@ -61,7 +61,7 @@ func (f *File) OpenFile(name string, flag int, perm os.FileMode) (*os.File, erro
 	return os.OpenFile(name, flag, perm)
 }
 
-// Rename provides custom file stats that wrap os.Stat output.
+// Stat provides custom file stats that wrap os.Stat output.
 func (f *File) Stat(filename string) (*FileInfo, error) {
 	return Stat(filename)
 }
