@@ -64,8 +64,11 @@ type resp struct {
 // post-actions like compression.
 func New(config *Config) (*Logger, error) {
 	l := &Logger{config: config, Interface: config.Rotatorr, Filer: filer.Default()}
+	if err := l.initialize(false); err != nil {
+		return nil, err
+	}
 
-	return l, l.initialize(false)
+	return l, nil
 }
 
 // NewMust takes in your configuration and returns a Logger you can use with
@@ -149,6 +152,7 @@ func (l *Logger) processLogChannel() {
 			l.resp <- &resp{int64(size), err}
 		case _, ok := <-l.signal:
 			if !ok {
+				l.signal = nil
 				l.resp <- &resp{err: l.stop()}
 
 				return
@@ -272,7 +276,6 @@ func (l *Logger) rotate() (int64, error) {
 func (l *Logger) Close() error {
 	defer close(l.resp)
 	close(l.signal)
-	l.signal = nil
 
 	return (<-l.resp).err
 }
