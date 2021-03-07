@@ -46,9 +46,9 @@ type Logger struct {
 	log         chan []byte   // incoming log messages passed across go routines.
 	resp        chan *resp    // response sent back across go routines.
 	signal      chan struct{} // used for Rotate and Close ops.
-	file        *os.File      // the active open file.
 	size        int64         // the size of the active open file.
 	created     time.Time     // the date the active open file was created.
+	File        *os.File      // The active open file. Useful for direct writing.
 	Interface   Rotatorr      // copied from config for brevity.
 	filer.Filer               // overridable file system procedures.
 }
@@ -186,7 +186,7 @@ func (l *Logger) openLog() error {
 		l.created = info.CreateTime
 	}
 
-	l.file, err = l.OpenFile(l.config.Filepath, perm, l.config.FileMode)
+	l.File, err = l.OpenFile(l.config.Filepath, perm, l.config.FileMode)
 	if err != nil {
 		return fmt.Errorf("error with new logfile: %w", err)
 	}
@@ -209,7 +209,7 @@ func (l *Logger) write(b []byte) (int, error) {
 		return 0, err
 	}
 
-	size, err := l.file.Write(b)
+	size, err := l.File.Write(b)
 	l.size += int64(size)
 
 	if err != nil {
@@ -223,7 +223,7 @@ func (l *Logger) write(b []byte) (int, error) {
 // Checks if it's too large or too old, and rotates it if so.
 // Makes sure the log file is open and ready for writing.
 func (l *Logger) checkAndRotate(size int64) error {
-	if l.file == nil {
+	if l.File == nil {
 		if err := l.openLog(); err != nil {
 			return err
 		}
@@ -282,12 +282,12 @@ func (l *Logger) Close() error {
 
 // close closes the active log file - from a channel message.
 func (l *Logger) close() error {
-	if l.file == nil {
+	if l.File == nil {
 		return nil
 	}
 
-	err := l.file.Close()
-	l.file = nil
+	err := l.File.Close()
+	l.File = nil
 
 	if err != nil {
 		return fmt.Errorf("closing log file %s: %w", l.config.Filepath, err)
