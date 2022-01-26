@@ -88,7 +88,7 @@ func NewMust(config *Config) *Logger {
 func (l *Logger) initialize(ignoreErrors bool) (err error) {
 	defer func() {
 		if err == nil || ignoreErrors {
-			l.log = make(chan []byte, 1)
+			l.log = make(chan []byte)
 			l.resp = make(chan *resp)
 			l.signal = make(chan struct{})
 
