@@ -59,9 +59,9 @@ func TestRotateOne(t *testing.T) {
 
 	// Basic test representing first rotate (no existing files).
 	mockFiler.EXPECT().ReadDir(filepath.Join("/", "var", "log"))
-	mockFiler.EXPECT().Rename("/var/log/service.log", newName)
+	mockFiler.EXPECT().Rename(filepath.Join("/", "var", "log", "service.log"), newName)
 	//
-	file, err := layout.Rotate("/var/log/service.log")
+	file, err := layout.Rotate(filepath.Join("/", "var", "log", "service.log"))
 	assert.Equal(newName, file)
 	assert.Nil(err)
 }
@@ -92,7 +92,7 @@ func TestRotateDelete(t *testing.T) {
 	mockFiler := mocks.NewMockFiler(mockCtrl)
 	fakes, fakeFiles := testFakeFiles(mockCtrl, 10)
 	layout := &timerotator.Layout{
-		ArchiveDir: "/var/log/archives",
+		ArchiveDir: filepath.Join("/", "var", "log", "archives"),
 		Filer:      mockFiler,
 		UseUTC:     true,
 		Format:     timerotator.FormatNoSecnd,
@@ -105,7 +105,7 @@ func TestRotateDelete(t *testing.T) {
 
 	// Basic test representing first rotate (no existing files).
 	mockFiler.EXPECT().ReadDir(layout.ArchiveDir).Return(fakeFiles, nil)
-	mockFiler.EXPECT().Rename("/var/log/service.log", newName)
+	mockFiler.EXPECT().Rename(filepath.Join("/", "var", "log", "service.log"), newName)
 
 	for idx := range fakes {
 		// We returned 10 fake files, so give them 10 fake file names.
@@ -116,14 +116,14 @@ func TestRotateDelete(t *testing.T) {
 		fakes[idx].EXPECT().Name().Return(fileName)
 
 		if idx >= layout.FileCount {
-			mockFiler.EXPECT().Remove(layout.ArchiveDir + "/" + fileName)
+			mockFiler.EXPECT().Remove(filepath.Join(layout.ArchiveDir, fileName))
 		} else if time.Since(fileTime) > layout.FileAge {
-			mockFiler.EXPECT().Remove(layout.ArchiveDir + "/" + fileName)
+			mockFiler.EXPECT().Remove(filepath.Join(layout.ArchiveDir, fileName))
 		}
 	}
 
 	//
-	file, err := layout.Rotate("/var/log/service.log")
+	file, err := layout.Rotate(filepath.Join("/", "var", "log", "service.log"))
 	assert.Equal(newName, file)
 	assert.Nil(err)
 }
