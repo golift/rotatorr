@@ -2,6 +2,7 @@ package introtator_test
 
 import (
 	"fmt"
+	"path"
 	"path/filepath"
 	"testing"
 
@@ -35,7 +36,7 @@ func TestDirs(t *testing.T) {
 	// test archive dir.
 	layout := &introtator.Layout{ArchiveDir: "/var/log/archives"}
 	dirs, err := layout.Dirs("/var/log/service.log")
-	assert.Equal([]string{filepath.Join("/", "var", "log"), filepath.Join("/", "var", "log", "archives")},
+	assert.Equal([]string{filepath.Join("/", "var", "log"), path.Join("/", "var", "log", "archives")},
 		dirs, "the wrong directories were returned")
 	assert.Nil(err, "this should not producce an error")
 	assert.EqualValues(filer.Default(), layout.Filer)
@@ -68,7 +69,7 @@ func TestRotateFirst(t *testing.T) {
 
 	// Basic test representing first rotate, ascending & descending (first rotate is the same).
 	mockFiler.EXPECT().ReadDir(layout.ArchiveDir).Times(2)
-	mockFiler.EXPECT().Rename(filepath.Join("/", "var", "log", "service.log"),
+	mockFiler.EXPECT().Rename(path.Join("/", "var", "log", "service.log"),
 		filepath.Join(layout.ArchiveDir, "service.1.log")).Times(2)
 	//
 	file, err := layout.Rotate("/var/log/service.log")

@@ -2,6 +2,7 @@ package timerotator_test
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -33,7 +34,7 @@ func TestDirs(t *testing.T) {
 	// test archive dir.
 	layout := &timerotator.Layout{ArchiveDir: "/var/log/archives"}
 	f, err := layout.Dirs("/var/log/service.log")
-	assert.Equal([]string{"/var/log", "/var/log/archives"}, f, "the wrong directories were returned")
+	assert.Equal([]string{filepath.Join("/", "var", "log"), "/var/log/archives"}, f, "the wrong directories were returned")
 	assert.Nil(err, "this should not producce an error")
 	assert.EqualValues(filer.Default(), layout.Filer)
 	assert.Equal(layout.Joiner, timerotator.DefaultJoiner)
@@ -54,10 +55,10 @@ func TestRotateOne(t *testing.T) {
 		Format: timerotator.FormatNoSecnd,
 		Joiner: timerotator.DefaultJoiner,
 	}
-	newName := "/var/log/service" + layout.Joiner + time.Now().UTC().Format(layout.Format) + ".log"
+	newName := filepath.Join("/", "var", "log", "service"+layout.Joiner+time.Now().UTC().Format(layout.Format)+".log")
 
 	// Basic test representing first rotate (no existing files).
-	mockFiler.EXPECT().ReadDir("/var/log")
+	mockFiler.EXPECT().ReadDir(filepath.Join("/", "var", "log"))
 	mockFiler.EXPECT().Rename("/var/log/service.log", newName)
 	//
 	file, err := layout.Rotate("/var/log/service.log")
