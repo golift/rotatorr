@@ -1,6 +1,7 @@
 package rotatorr_test
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -58,7 +59,7 @@ func TestRotateSize(t *testing.T) {
 	}
 
 	stat, _ := logger.File.Stat()
-	log.Println(stat.Size(), stat.Name())
+	fmt.Fprintln(os.Stderr, stat.Size(), stat.Name())
 
 	//
 	msg := []byte("log message")                                                                // len: 11
@@ -72,7 +73,7 @@ func TestRotateSize(t *testing.T) {
 	}
 
 	stat, _ = logger.File.Stat()
-	log.Println(stat.Size(), stat.Name())
+	fmt.Fprintln(os.Stderr, stat.Size(), stat.Name())
 
 	check(logger.Write(msg)) // 11
 	check(logger.Write(msg)) // 22
