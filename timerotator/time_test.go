@@ -32,9 +32,10 @@ func TestDirs(t *testing.T) {
 	assert := assert.New(t)
 
 	// test archive dir.
-	layout := &timerotator.Layout{ArchiveDir: "/var/log/archives"}
-	f, err := layout.Dirs("/var/log/service.log")
-	assert.Equal([]string{filepath.Join("/", "var", "log"), "/var/log/archives"}, f, "the wrong directories were returned")
+	layout := &timerotator.Layout{ArchiveDir: filepath.Join("/", "var", "log", "archives")}
+	f, err := layout.Dirs(filepath.Join("/", "var", "log", "service.log"))
+	assert.Equal([]string{filepath.Join("/", "var", "log"), filepath.Join("/", "var", "log", "archives")},
+		f, "the wrong directories were returned")
 	assert.Nil(err, "this should not producce an error")
 	assert.EqualValues(filer.Default(), layout.Filer)
 	assert.Equal(layout.Joiner, timerotator.DefaultJoiner)
