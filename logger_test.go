@@ -44,7 +44,6 @@ func TestRotateSize(t *testing.T) {
 	mockRotatorr := mocks.NewMockRotatorr(mockCtrl)
 	testFile := filepath.Join(os.TempDir(), "mylog.log")
 
-	assert.NoError(os.Remove(testFile), "could not remove temp test log file")
 	mockRotatorr.EXPECT().Dirs(gomock.Any())
 	//
 	logger, err := rotatorr.New(&rotatorr.Config{
