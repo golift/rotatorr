@@ -67,11 +67,12 @@ func TestRotateSize(t *testing.T) {
 		assert.Nil(err)
 		assert.Equal(len(msg), s)
 	}
+
+	mockRotatorr.EXPECT().Rotate(testFile)
 	check(logger.Write(msg)) // 11
 	check(logger.Write(msg)) // 22
 	check(logger.Write(msg)) // 33
 	check(logger.Write(msg)) // 44
-	mockRotatorr.EXPECT().Rotate(testFile)
 	check(logger.Write(msg)) // 55 > 50, rotate!
 }
 
