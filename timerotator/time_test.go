@@ -100,7 +100,8 @@ func TestRotateDelete(t *testing.T) {
 		FileAge:    time.Minute,
 		FileCount:  2,
 	}
-	newName := filepath.Join("/", "var", "log", "archives", "service"+layout.Joiner+time.Now().UTC().Format(layout.Format)+".log")
+	newName := filepath.Join("/", "var", "log", "archives",
+		"service"+layout.Joiner+time.Now().UTC().Format(layout.Format)+".log")
 
 	// Basic test representing first rotate (no existing files).
 	mockFiler.EXPECT().ReadDir(layout.ArchiveDir).Return(fakeFiles, nil)
