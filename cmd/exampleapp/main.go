@@ -41,17 +41,17 @@ const (
 
 func main() {
 	var (
-		l   io.WriteCloser
-		err error
+		logger io.WriteCloser
+		err    error
 	)
 
 	switch {
 	case isArg("every"):
-		l, err = everyTestorr()
+		logger, err = everyTestorr()
 	case isArg("time"):
-		l, err = timeTestorr()
+		logger, err = timeTestorr()
 	case isArg("int"):
-		l, err = intTestorr()
+		logger, err = intTestorr()
 	default:
 		fmt.Println("pass test arg: time or int")
 		os.Exit(1)
@@ -62,19 +62,19 @@ func main() {
 	}
 
 	log.SetFlags(log.LstdFlags)
-	log.SetOutput(l)
+	log.SetOutput(logger)
 	makeLogs()
 }
 
 // Write fake logs!
 func makeLogs() {
-	s := string(bytes.Repeat([]byte{'_'}, bytesPerLogLine))
+	logLine := string(bytes.Repeat([]byte{'_'}, bytesPerLogLine))
 
-	t := time.NewTicker(timeBetweenLogs)
-	for range t.C {
+	ticker := time.NewTicker(timeBetweenLogs)
+	for range ticker.C {
 		fmt.Print(".")
 
-		if err := log.Output(0, s); err != nil {
+		if err := log.Output(0, logLine); err != nil {
 			panic(err)
 		}
 	}

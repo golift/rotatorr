@@ -59,16 +59,15 @@ func (l *Layout) Rotate(fileName string) (string, error) {
 	}
 
 	var (
-		dir = l.getArchiveDir(fileName)
-		new = filepath.Join(dir, l.getPrefix(fileName)+now.Format(l.Format)+LogExt)
-		err = l.Rename(fileName, new)
+		dir     = l.getArchiveDir(fileName)
+		newFile = filepath.Join(dir, l.getPrefix(fileName)+now.Format(l.Format)+LogExt)
 	)
 
-	if err != nil {
+	if err := l.Rename(fileName, newFile); err != nil {
 		return "", fmt.Errorf("error renaming log: %w", err)
 	}
 
-	return new, l.deleteOldLogs(l.getAllLogFiles(fileName))
+	return newFile, l.deleteOldLogs(l.getAllLogFiles(fileName))
 }
 
 // Dirs validates input data and returns the list of directories being used.
@@ -109,14 +108,14 @@ func (l *Layout) deleteOldLogs(logFiles *backupFiles) error {
 	if l.FileAge > 0 {
 		// Parse the time stamp out of each file name.
 		// If the time is older than FileAge, delete the file.
-		for i, w := range logFiles.value {
-			if time.Since(w) < l.FileAge {
+		for idx, when := range logFiles.value {
+			if time.Since(when) < l.FileAge {
 				continue
-			} else if err := l.Remove(logFiles.Files[i]); err != nil {
+			} else if err := l.Remove(logFiles.Files[idx]); err != nil {
 				return fmt.Errorf("error removing file: %w", err)
 			}
 
-			gone[logFiles.Files[i]] = struct{}{}
+			gone[logFiles.Files[idx]] = struct{}{}
 		}
 	}
 
@@ -152,13 +151,13 @@ func (l *Layout) getAllLogFiles(fileName string) *backupFiles {
 		prefix = l.getPrefix(fileName)
 	)
 
-	fs, err := l.ReadDir(dir)
-	if err != nil || len(fs) == 0 {
+	fileList, err := l.ReadDir(dir)
+	if err != nil || len(fileList) == 0 {
 		return list
 	}
 
-	for i := range fs {
-		name := fs[i].Name()
+	for idx := range fileList {
+		name := fileList[idx].Name()
 		if !strings.HasPrefix(name, prefix) {
 			continue // not our file.
 		}

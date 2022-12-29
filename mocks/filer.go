@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	fs "io/fs"
 	os "os"
 	reflect "reflect"
 
@@ -36,7 +37,7 @@ func (m *MockFiler) EXPECT() *MockFilerMockRecorder {
 }
 
 // MkdirAll mocks base method.
-func (m *MockFiler) MkdirAll(arg0 string, arg1 os.FileMode) error {
+func (m *MockFiler) MkdirAll(arg0 string, arg1 fs.FileMode) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "MkdirAll", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -50,7 +51,7 @@ func (mr *MockFilerMockRecorder) MkdirAll(arg0, arg1 interface{}) *gomock.Call {
 }
 
 // OpenFile mocks base method.
-func (m *MockFiler) OpenFile(arg0 string, arg1 int, arg2 os.FileMode) (*os.File, error) {
+func (m *MockFiler) OpenFile(arg0 string, arg1 int, arg2 fs.FileMode) (*os.File, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "OpenFile", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*os.File)
@@ -65,10 +66,10 @@ func (mr *MockFilerMockRecorder) OpenFile(arg0, arg1, arg2 interface{}) *gomock.
 }
 
 // ReadDir mocks base method.
-func (m *MockFiler) ReadDir(arg0 string) ([]os.FileInfo, error) {
+func (m *MockFiler) ReadDir(arg0 string) ([]fs.FileInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ReadDir", arg0)
-	ret0, _ := ret[0].([]os.FileInfo)
+	ret0, _ := ret[0].([]fs.FileInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

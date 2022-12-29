@@ -1,5 +1,7 @@
 // Package filer is an interface used in the rotatorr subpackages.
 // You may override this to gain more control of operations in your app.
+//
+//nolint:wrapcheck,ireturn
 package filer
 
 //go:generate mockgen -destination=../mocks/filer.go -package=mocks golift.io/rotatorr/filer Filer

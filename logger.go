@@ -15,8 +15,8 @@ import (
 
 // These are the default directory and log file POSIX modes.
 const (
-	FileMode os.FileMode = 0600
-	DirMode  os.FileMode = 0750
+	FileMode os.FileMode = 0o600
+	DirMode  os.FileMode = 0o750
 )
 
 // DefaultMaxSize is only used when Every and FileSize Config
@@ -63,29 +63,31 @@ type resp struct {
 // log.SetOutput(). The provided logger handles log rotation and dispatching
 // post-actions like compression.
 func New(config *Config) (*Logger, error) {
-	l := &Logger{config: config, Interface: config.Rotatorr, Filer: filer.Default()}
-	if err := l.initialize(false); err != nil {
+	logger := &Logger{config: config, Interface: config.Rotatorr, Filer: filer.Default()}
+	if err := logger.initialize(false); err != nil {
 		return nil, err
 	}
 
-	return l, nil
+	return logger, nil
 }
 
 // NewMust takes in your configuration and returns a Logger you can use with
 // log.SetOutput(). If an error occurs opening the log file, making log directories,
 // or rotating files it is ignored (and retried later). Do not pass a Nil Rotatorr.
 func NewMust(config *Config) *Logger {
-	l := &Logger{config: config, Interface: config.Rotatorr, Filer: filer.Default()}
+	logger := &Logger{config: config, Interface: config.Rotatorr, Filer: filer.Default()}
 
-	if err := l.initialize(true); errors.Is(err, ErrNilInterface) {
+	if err := logger.initialize(true); errors.Is(err, ErrNilInterface) {
 		panic(err)
 	}
 
-	return l
+	return logger
 }
 
 // initialize runs all the startup routines.
-func (l *Logger) initialize(ignoreErrors bool) (err error) {
+func (l *Logger) initialize(ignoreErrors bool) error {
+	var err error
+
 	defer func() {
 		if err == nil || ignoreErrors {
 			l.log = make(chan []byte)
@@ -97,12 +99,12 @@ func (l *Logger) initialize(ignoreErrors bool) (err error) {
 	}()
 
 	if l.Interface == nil {
-		return ErrNilInterface
-	} else if err := l.setConfigDefaults(); err != nil {
+		err = ErrNilInterface
+	} else if err = l.setConfigDefaults(); err != nil {
 		return err
+	} else {
+		err = l.checkAndRotate(0)
 	}
-
-	err = l.checkAndRotate(0)
 
 	return err
 }

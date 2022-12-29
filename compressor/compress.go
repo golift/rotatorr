@@ -18,10 +18,10 @@ import (
 const SuffixGZ = ".gz"
 
 // CompressLevel sets the global compression level.
-var CompressLevel = gzip.DefaultCompression // nolint: gochecknoglobals
+var CompressLevel = gzip.DefaultCompression //nolint:gochecknoglobals
 
 // Filer allows overriding os-file procedures.
-var Filer = filer.Default() // nolint: gochecknoglobals
+var Filer = filer.Default() //nolint:gochecknoglobals
 
 // Report contains a report of the compression operation.
 // Always check for Error to make sure the New* data is valid.
@@ -37,7 +37,7 @@ type Report struct {
 // Compress gzips a file and returns a report. Blocks until finished.
 func Compress(fileName string) (*Report, error) {
 	// fmt.Println("compressing", fileName)
-	r := &Report{
+	report := &Report{
 		OldFile: fileName,
 		NewFile: fileName + SuffixGZ,
 		OldSize: 0,
@@ -51,21 +51,21 @@ func Compress(fileName string) (*Report, error) {
 		level = gzip.DefaultCompression
 	}
 
-	f, err := Filer.Stat(r.OldFile)
-	if r.Error = err; r.Error != nil {
-		return r, fmt.Errorf("stating old file: %w", r.Error)
+	oldFile, err := Filer.Stat(report.OldFile)
+	if report.Error = err; report.Error != nil {
+		return report, fmt.Errorf("stating old file: %w", report.Error)
 	}
 
-	r.OldSize = f.Size()
+	report.OldSize = oldFile.Size()
 	start := time.Now()
-	r.NewSize, r.Error = compress(r.OldFile, r.NewFile, f.Mode(), level)
-	r.Elapsed = time.Since(start)
+	report.NewSize, report.Error = compress(report.OldFile, report.NewFile, oldFile.Mode(), level)
+	report.Elapsed = time.Since(start)
 
-	if r.Error != nil {
-		return r, fmt.Errorf("compressor error: %w", r.Error)
+	if report.Error != nil {
+		return report, fmt.Errorf("compressor error: %w", report.Error)
 	}
 
-	return r, nil
+	return report, nil
 }
 
 // CompressBackground runs a file compression in the background.
@@ -128,16 +128,20 @@ func Log(report *Report, printf func(msg string, fmt ...interface{})) {
 
 // compress does the "hard" work: Open the old file, open the new file, create a gzip writer,
 // copy the writer to the new file, close all open file handles, and lastly delete the old file.
-func compress(oldFile, newFile string, mode os.FileMode, level int) (size int64, err error) {
+func compress(oldFile, newFile string, mode os.FileMode, level int) (int64, error) {
+	var (
+		size     int64
+		err      error
+		ncf, gzf *os.File
+	)
+
 	defer func() { // First, so it executes last.
 		if err != nil {
 			_ = Filer.Remove(newFile)
-		} else if err = Filer.Remove(oldFile); err != nil {
-			err = fmt.Errorf("deleting source file: %w", err)
+		} else {
+			_ = Filer.Remove(oldFile)
 		}
 	}()
-
-	var ncf, gzf *os.File
 
 	ncf, err = Filer.OpenFile(oldFile, os.O_RDONLY, 0)
 	if err != nil {

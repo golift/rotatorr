@@ -2,6 +2,7 @@ package timerotator_test
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -16,14 +17,14 @@ func TestPost(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
 
-	l := &timerotator.Layout{PostRotate: func(s1, s2 string) {
+	layout := &timerotator.Layout{PostRotate: func(s1, s2 string) {
 		assert.Equal("string1", s1)
 		assert.Equal("string2", s2)
 	}}
-	l.Post("string1", "string2")
+	layout.Post("string1", "string2")
 
-	l.PostRotate = nil
-	l.Post("string1", "string2")
+	layout.PostRotate = nil
+	layout.Post("string1", "string2")
 }
 
 func TestDirs(t *testing.T) {
@@ -31,13 +32,14 @@ func TestDirs(t *testing.T) {
 	assert := assert.New(t)
 
 	// test archive dir.
-	l := &timerotator.Layout{ArchiveDir: "/var/log/archives"}
-	f, err := l.Dirs("/var/log/service.log")
-	assert.Equal([]string{"/var/log", "/var/log/archives"}, f, "the wrong directories were returned")
+	layout := &timerotator.Layout{ArchiveDir: filepath.Join("/", "var", "log", "archives")}
+	f, err := layout.Dirs(filepath.Join("/", "var", "log", "service.log"))
+	assert.Equal([]string{filepath.Join("/", "var", "log"), filepath.Join("/", "var", "log", "archives")},
+		f, "the wrong directories were returned")
 	assert.Nil(err, "this should not producce an error")
-	assert.EqualValues(filer.Default(), l.Filer)
-	assert.Equal(l.Joiner, timerotator.DefaultJoiner)
-	assert.Equal(l.Format, timerotator.FormatDefault)
+	assert.EqualValues(filer.Default(), layout.Filer)
+	assert.Equal(layout.Joiner, timerotator.DefaultJoiner)
+	assert.Equal(layout.Format, timerotator.FormatDefault)
 }
 
 func TestRotateOne(t *testing.T) {
@@ -48,29 +50,34 @@ func TestRotateOne(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	mockFiler := mocks.NewMockFiler(mockCtrl)
-	l := &timerotator.Layout{
+	layout := &timerotator.Layout{
 		Filer:  mockFiler,
 		UseUTC: true,
 		Format: timerotator.FormatNoSecnd,
 		Joiner: timerotator.DefaultJoiner,
 	}
-	newName := "/var/log/service" + l.Joiner + time.Now().UTC().Format(l.Format) + ".log"
+	newName := filepath.Join("/", "var", "log", "service"+layout.Joiner+time.Now().UTC().Format(layout.Format)+".log")
 
 	// Basic test representing first rotate (no existing files).
-	mockFiler.EXPECT().ReadDir("/var/log")
-	mockFiler.EXPECT().Rename("/var/log/service.log", newName)
+	mockFiler.EXPECT().ReadDir(filepath.Join("/", "var", "log"))
+	mockFiler.EXPECT().Rename(filepath.Join("/", "var", "log", "service.log"), newName)
 	//
-	file, err := l.Rotate("/var/log/service.log")
+	file, err := layout.Rotate(filepath.Join("/", "var", "log", "service.log"))
 	assert.Equal(newName, file)
 	assert.Nil(err)
 }
 
 // Make fake files to fake delete.
-func testFakeFiles(mockCtrl *gomock.Controller, count int) (fakes []*mocks.MockFileInfo, files []os.FileInfo) {
+func testFakeFiles(mockCtrl *gomock.Controller, count int) ([]*mocks.MockFileInfo, []os.FileInfo) {
+	var (
+		fakes = make([]*mocks.MockFileInfo, count)
+		files = make([]os.FileInfo, count)
+	)
+
 	for i := 0; i < count; i++ {
 		fake := mocks.NewMockFileInfo(mockCtrl)
-		fakes = append(fakes, fake)
-		files = append(files, fake)
+		fakes[i] = fake
+		files[i] = fake
 	}
 
 	return fakes, files
@@ -85,8 +92,8 @@ func TestRotateDelete(t *testing.T) {
 
 	mockFiler := mocks.NewMockFiler(mockCtrl)
 	fakes, fakeFiles := testFakeFiles(mockCtrl, 10)
-	l := &timerotator.Layout{
-		ArchiveDir: "/var/log/archives",
+	layout := &timerotator.Layout{
+		ArchiveDir: filepath.Join("/", "var", "log", "archives"),
 		Filer:      mockFiler,
 		UseUTC:     true,
 		Format:     timerotator.FormatNoSecnd,
@@ -94,29 +101,30 @@ func TestRotateDelete(t *testing.T) {
 		FileAge:    time.Minute,
 		FileCount:  2,
 	}
-	newName := l.ArchiveDir + "/service" + l.Joiner + time.Now().UTC().Format(l.Format) + ".log"
+	newName := filepath.Join("/", "var", "log", "archives",
+		"service"+layout.Joiner+time.Now().UTC().Format(layout.Format)+".log")
 
 	// Basic test representing first rotate (no existing files).
-	mockFiler.EXPECT().ReadDir(l.ArchiveDir).Return(fakeFiles, nil)
-	mockFiler.EXPECT().Rename("/var/log/service.log", newName)
+	mockFiler.EXPECT().ReadDir(layout.ArchiveDir).Return(fakeFiles, nil)
+	mockFiler.EXPECT().Rename(filepath.Join("/", "var", "log", "service.log"), newName)
 
-	for i := range fakes {
+	for idx := range fakes {
 		// We returned 10 fake files, so give them 10 fake file names.
 		// Each name is 10 seconds older than the previous. We then test for the age
 		// and if it's older than our FileAge value it should be get deleted.
-		ts := time.Now().Add(-time.Duration(i*10) * time.Second).UTC()
-		fileName := "service" + l.Joiner + ts.Format(l.Format) + ".log"
-		fakes[i].EXPECT().Name().Return(fileName)
+		fileTime := time.Now().Add(-time.Duration(idx*10) * time.Second).UTC()
+		fileName := "service" + layout.Joiner + fileTime.Format(layout.Format) + ".log"
+		fakes[idx].EXPECT().Name().Return(fileName)
 
-		if i >= l.FileCount {
-			mockFiler.EXPECT().Remove(l.ArchiveDir + "/" + fileName)
-		} else if time.Since(ts) > l.FileAge {
-			mockFiler.EXPECT().Remove(l.ArchiveDir + "/" + fileName)
+		if idx >= layout.FileCount {
+			mockFiler.EXPECT().Remove(filepath.Join(layout.ArchiveDir, fileName))
+		} else if time.Since(fileTime) > layout.FileAge {
+			mockFiler.EXPECT().Remove(filepath.Join(layout.ArchiveDir, fileName))
 		}
 	}
 
 	//
-	file, err := l.Rotate("/var/log/service.log")
+	file, err := layout.Rotate(filepath.Join("/", "var", "log", "service.log"))
 	assert.Equal(newName, file)
 	assert.Nil(err)
 }

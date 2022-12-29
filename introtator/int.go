@@ -8,7 +8,6 @@
 // all the files in the way are rotated first. In Descending mode the
 // existing files are pruned, then files are rotated down and lastly
 // the current file is rotated to the next highest integer.
-//
 package introtator
 
 import (
@@ -69,12 +68,12 @@ func (l *Layout) Rotate(fileName string) (string, error) {
 	default:
 		sort.Sort(sort.Reverse(logFiles))
 
-		new, err := l.rotateAscending(logFiles, fileName)
+		newFile, err := l.rotateAscending(logFiles, fileName)
 		if err != nil {
-			return new, err
+			return newFile, err
 		}
 
-		return new, l.deleteOldLogsAsc(logFiles)
+		return newFile, l.deleteOldLogsAsc(logFiles)
 	}
 }
 
