@@ -2,6 +2,7 @@ package introtator_test
 
 import (
 	"fmt"
+	"path/filepath"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -34,7 +35,8 @@ func TestDirs(t *testing.T) {
 	// test archive dir.
 	layout := &introtator.Layout{ArchiveDir: "/var/log/archives"}
 	dirs, err := layout.Dirs("/var/log/service.log")
-	assert.Equal([]string{"/var/log", "/var/log/archives"}, dirs, "the wrong directories were returned")
+	assert.Equal([]string{filepath.Join("/", "var", "log"), filepath.Join("/", "var", "log", "archives")},
+		dirs, "the wrong directories were returned")
 	assert.Nil(err, "this should not producce an error")
 	assert.EqualValues(filer.Default(), layout.Filer)
 	assert.Equal(layout.FileOrder, introtator.Ascending)
@@ -42,14 +44,14 @@ func TestDirs(t *testing.T) {
 	// test invalid file order.
 	layout = &introtator.Layout{FileOrder: 99}
 	dirs, err = layout.Dirs("/var/log/service.log")
-	assert.Equal([]string{"/var/log"}, dirs, "the wrong directory was returned")
+	assert.Equal([]string{filepath.Join("/", "var", "log")}, dirs, "the wrong directory was returned")
 	assert.Nil(err, "this should not producce an error")
 	assert.Equal(layout.FileOrder, introtator.Ascending)
 
 	// test valid file order.
 	layout = &introtator.Layout{FileOrder: introtator.Descending}
 	dirs, err = layout.Dirs("/var/log/service.log")
-	assert.Equal([]string{"/var/log"}, dirs, "the wrong directory was returned")
+	assert.Equal([]string{filepath.Join("/", "var", "log")}, dirs, "the wrong directory was returned")
 	assert.Nil(err, "this should not producce an error")
 	assert.Equal(layout.FileOrder, introtator.Descending)
 }
@@ -66,20 +68,22 @@ func TestRotateFirst(t *testing.T) {
 
 	// Basic test representing first rotate, ascending & descending (first rotate is the same).
 	mockFiler.EXPECT().ReadDir(layout.ArchiveDir).Times(2)
-	mockFiler.EXPECT().Rename("/var/log/service.log", layout.ArchiveDir+"/service.1.log").Times(2)
+	mockFiler.EXPECT().Rename(filepath.Join("/", "var", "log", "service.log"),
+		filepath.Join(layout.ArchiveDir, "service.1.log")).Times(2)
 	//
 	file, err := layout.Rotate("/var/log/service.log")
-	assert.Equal(layout.ArchiveDir+"/service.1.log", file)
+	assert.Equal(filepath.Join(layout.ArchiveDir, "service.1.log"), file)
 	assert.Nil(err)
 	//
 	layout.FileOrder = introtator.Descending
 	file, err = layout.Rotate("/var/log/service.log")
-	assert.Equal(layout.ArchiveDir+"/service.1.log", file)
+	assert.Equal(filepath.Join(layout.ArchiveDir, "service.1.log"), file)
 	assert.Nil(err)
 
 	// Test a couple errors.
 	mockFiler.EXPECT().ReadDir(layout.ArchiveDir).Times(2)
-	mockFiler.EXPECT().Rename("/var/log/service.log", layout.ArchiveDir+"/service.1.log").Times(2).Return(errTest)
+	mockFiler.EXPECT().Rename(filepath.Join("/", "var", "log", "service.log"),
+		filepath.Join(layout.ArchiveDir, "service.1.log")).Times(2).Return(errTest)
 	//
 	file, err = layout.Rotate("/var/log/service.log")
 	assert.Empty(file, "the file must be empty when rotation fails.")
