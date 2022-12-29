@@ -15,22 +15,22 @@ func TestCompress(t *testing.T) {
 	assert := assert.New(t)
 	compressor.CompressLevel = 77
 
-	r, err := compressor.Compress("/does/not/exist/file")
+	report, err := compressor.Compress("/does/not/exist/file")
 	assert.NotNil(err)
 	assert.Contains(err.Error(), "stating old file:")
-	assert.ErrorIs(err, r.Error)
+	assert.ErrorIs(err, report.Error)
 
 	dir := os.TempDir()
-	err = os.MkdirAll(dir, 0755)
+	err = os.MkdirAll(dir, 0o755)
 	assert.Nilf(err, "error creating test dir: %v", err)
-	f, err := os.Create(filepath.Join(dir, "testfile.log"))
+	oFile, err := os.Create(filepath.Join(dir, "testfile.log"))
 	assert.Nilf(err, "error creating test file: %v", err)
-	_, err = f.Write(make([]byte, 300000))
+	_, err = oFile.Write(make([]byte, 300000))
 	assert.Nilf(err, "error writing test file: %v", err)
-	r, err = compressor.Compress(f.Name())
+	report, err = compressor.Compress(oFile.Name())
 	assert.Nil(err)
-	assert.Nil(r.Error)
+	assert.Nil(report.Error)
 
 	// XXX: check report items.
-	os.Remove(f.Name())
+	os.Remove(oFile.Name())
 }

@@ -11,11 +11,16 @@ import (
 	"golift.io/rotatorr/mocks"
 )
 
-func testFakeFiles(mockCtrl *gomock.Controller, count int) (fakes []*mocks.MockFileInfo, files []os.FileInfo) {
+func testFakeFiles(mockCtrl *gomock.Controller, count int) ([]*mocks.MockFileInfo, []os.FileInfo) {
+	var (
+		fakes = make([]*mocks.MockFileInfo, count)
+		files = make([]os.FileInfo, count)
+	)
+
 	for i := 0; i < count; i++ {
 		fake := mocks.NewMockFileInfo(mockCtrl)
-		fakes = append(fakes, fake)
-		files = append(files, fake)
+		fakes[i] = fake
+		files[i] = fake
 	}
 
 	return fakes, files
@@ -29,7 +34,7 @@ func TestRotateAsc(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	mockFiler := mocks.NewMockFiler(mockCtrl)
-	l := &introtator.Layout{
+	layout := &introtator.Layout{
 		Filer:     mockFiler,
 		FileOrder: introtator.Ascending,
 		FileCount: 5,
@@ -39,7 +44,7 @@ func TestRotateAsc(t *testing.T) {
 	mockFiler.EXPECT().ReadDir("/var/log")
 	mockFiler.EXPECT().Rename("/var/log/service.log", "/var/log/service.1.log")
 	//
-	file, err := l.Rotate("/var/log/service.log")
+	file, err := layout.Rotate("/var/log/service.log")
 	assert.Equal("/var/log/service.1.log", file)
 	assert.Nil(err)
 
@@ -71,7 +76,7 @@ func TestRotateAsc(t *testing.T) {
 		fakes[i].EXPECT().Name().Return("service." + strconv.Itoa(i+1) + ".log.gz")
 	}
 	//
-	file, err = l.Rotate("/var/log/service.log")
+	file, err = layout.Rotate("/var/log/service.log")
 	assert.Equal("/var/log/service.1.log", file)
 	assert.Nil(err)
 }

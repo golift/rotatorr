@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	os "os"
+	fs "io/fs"
 	reflect "reflect"
 	time "time"
 
@@ -64,10 +64,10 @@ func (mr *MockFileInfoMockRecorder) ModTime() *gomock.Call {
 }
 
 // Mode mocks base method.
-func (m *MockFileInfo) Mode() os.FileMode {
+func (m *MockFileInfo) Mode() fs.FileMode {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Mode")
-	ret0, _ := ret[0].(os.FileMode)
+	ret0, _ := ret[0].(fs.FileMode)
 	return ret0
 }
 

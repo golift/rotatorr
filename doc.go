@@ -10,12 +10,10 @@
 //
 // Use this package if you write your own log file, and you're tired of your
 // log file growing indefinitely.
-// The included `inrotatorr`
-// and `timerotator`
+// The included `introtatorr` and `timerotator`
 // modules allow a variety of naming conventions for backup files. They also
 // include options to delete old files based on age, count, or both.
 //
-//   https://pkg.go.dev/golift.io/rotatorr/introtator
-//   https://pkg.go.dev/golift.io/rotatorr/timerotator
-//
+//	https://pkg.go.dev/golift.io/rotatorr/introtator
+//	https://pkg.go.dev/golift.io/rotatorr/timerotator
 package rotatorr

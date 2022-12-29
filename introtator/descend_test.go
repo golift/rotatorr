@@ -18,7 +18,7 @@ func TestRotateDesc(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	mockFiler := mocks.NewMockFiler(mockCtrl)
-	l := &introtator.Layout{
+	layout := &introtator.Layout{
 		Filer:     mockFiler,
 		FileOrder: introtator.Descending,
 		FileCount: 5,
@@ -28,7 +28,7 @@ func TestRotateDesc(t *testing.T) {
 	mockFiler.EXPECT().ReadDir("/var/log")
 	mockFiler.EXPECT().Rename("/var/log/service.log", "/var/log/service.1.log")
 	//
-	file, err := l.Rotate("/var/log/service.log")
+	file, err := layout.Rotate("/var/log/service.log")
 	assert.Equal("/var/log/service.1.log", file)
 	assert.Nil(err)
 
@@ -54,7 +54,7 @@ func TestRotateDesc(t *testing.T) {
 		fakes[i].EXPECT().Name().Return("service." + strconv.Itoa(i+1) + ".log.gz")
 	}
 	//
-	file, err = l.Rotate("/var/log/service.log")
+	file, err = layout.Rotate("/var/log/service.log")
 	assert.Equal("/var/log/service.5.log", file)
 	assert.Nil(err)
 
@@ -68,7 +68,7 @@ func TestRotateDesc(t *testing.T) {
 		fakes[i].EXPECT().Name().Return("service." + strconv.Itoa(i+1) + ".log.gz")
 	}
 	//
-	file, err = l.Rotate("/var/log/service.log")
+	file, err = layout.Rotate("/var/log/service.log")
 	assert.Empty(file)
 	assert.ErrorIs(err, errTest)
 }

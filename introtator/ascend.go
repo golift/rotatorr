@@ -13,7 +13,6 @@ import (
 // number. In the default ascending mode, every log file has to be renamed on every rotation.
 func (l *Layout) rotateAscending(logFiles *backupFiles, fileName string) (string, error) {
 	var (
-		new     = 1
 		dir     = l.getArchiveDir(fileName)
 		prefix  = l.getPrefix(fileName)
 		newPath = filepath.Join(dir, prefix+LogExt1)
@@ -21,21 +20,21 @@ func (l *Layout) rotateAscending(logFiles *backupFiles, fileName string) (string
 
 	if len(logFiles.Files) != 0 {
 		// ascending and we have files. They all need to be renamed.
-		for i, f := range logFiles.Files {
+		for idx, filePath := range logFiles.Files {
 			ext := LogExt
-			if strings.HasSuffix(logFiles.Files[i], GZext) {
+			if strings.HasSuffix(logFiles.Files[idx], GZext) {
 				ext += GZext
 			}
 
-			if i != len(logFiles.Files)-1 && logFiles.value[i+1] != logFiles.value[i]-1 {
+			if idx != len(logFiles.Files)-1 && logFiles.value[idx+1] != logFiles.value[idx]-1 {
 				continue // There's a gap in the list, so skip renaming one.
 			}
 
-			logFiles.value[i]++
-			logFiles.Files[i] = filepath.Join(dir, prefix+strconv.Itoa(logFiles.value[i])+ext)
+			logFiles.value[idx]++
+			logFiles.Files[idx] = filepath.Join(dir, prefix+strconv.Itoa(logFiles.value[idx])+ext)
 
 			// fmt.Printf("\nrenaming [%d] %s -> %s\n", i, f, logFiles.Files[i])
-			if err := l.Rename(f, logFiles.Files[i]); err != nil {
+			if err := l.Rename(filePath, logFiles.Files[idx]); err != nil {
 				return "", fmt.Errorf("error rotating backup file: %w", err)
 			}
 		}
@@ -46,7 +45,7 @@ func (l *Layout) rotateAscending(logFiles *backupFiles, fileName string) (string
 	}
 
 	logFiles.Files = append(logFiles.Files, newPath)
-	logFiles.value = append(logFiles.value, new)
+	logFiles.value = append(logFiles.value, 1)
 
 	return newPath, nil
 }

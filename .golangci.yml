@@ -1,0 +1,28 @@
+issues:
+  exclude-rules:
+    - linters:
+        - funlen
+        - testableexamples
+      path: '(.+)_test\.go'
+    - linters:
+        - wrapcheck
+        - forbidigo
+      path: cmd/exampleapp
+linters:
+  enable-all: true
+  disable:
+    # deprecated
+    - maligned
+    - scopelint
+    - interfacer
+    - golint
+    - exhaustivestruct
+    - nosnakecase
+    - structcheck
+    - deadcode
+    - varcheck
+    - ifshort
+    # unused
+    - exhaustruct
+run:
+  timeout: 3m

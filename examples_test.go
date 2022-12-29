@@ -21,7 +21,7 @@ func Example_lumberjack() {
 	log.SetOutput(rotatorr.NewMust(&rotatorr.Config{
 		Filepath: "/var/log/file.log", // optional.
 		FileSize: 100 * 1024 * 1024,   // 100 megabytes.
-		DirMode:  0755,                // world-readable.
+		DirMode:  0o755,               // world-readable.
 		Rotatorr: &timerotator.Layout{
 			FileAge:   0,    // keep all backup files (default).
 			FileCount: 0,    // keep all backup files (default).
@@ -116,7 +116,7 @@ func ExampleLogger_Rotate() {
 // This is a simple example that enables log compression.
 // Enabling compression on "Ascending Integer" log files is not recommend because
 // it's possible for a log to be rotated (renamed) while being compressed.
-// This is best utilized on on Descending Integer or Time-based log files.
+// This is best utilized on Descending Integer or Time-based log files.
 // Of course, these are all interfaces you can override, so customize away!
 // The called CompressPostRotate procedure runs a compression in the background,
 // and prints a log message when it completes.
@@ -149,7 +149,7 @@ func Example_compressorWithLog() {
 // Example_compressor_capture shows how to capture the response from a
 // post-rotate compression so you can do whatever you want with it.
 func Example_compressorCaptureOutput() {
-	l, err := rotatorr.New(&rotatorr.Config{
+	logger, err := rotatorr.New(&rotatorr.Config{
 		Filepath: "/var/log/file.log",
 		FileSize: 100 * 1024 * 1024, // 100 megabytes.
 		Rotatorr: &timerotator.Layout{
@@ -168,5 +168,5 @@ func Example_compressorCaptureOutput() {
 		panic(err)
 	}
 
-	log.SetOutput(l)
+	log.SetOutput(logger)
 }

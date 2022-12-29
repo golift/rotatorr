@@ -17,21 +17,21 @@ func (l *Layout) rotateDescending(logFiles *backupFiles, fileName string) (strin
 		prefix = l.getPrefix(fileName)
 	)
 
-	for i, f := range logFiles.Files {
+	for idx, filePath := range logFiles.Files {
 		ext := LogExt
-		if strings.HasSuffix(logFiles.Files[i], GZext) {
+		if strings.HasSuffix(logFiles.Files[idx], GZext) {
 			ext += GZext
 		}
 
-		logFiles.value[i] = i + 1
-		logFiles.Files[i] = filepath.Join(dir, prefix+strconv.Itoa(logFiles.value[i])+ext)
+		logFiles.value[idx] = idx + 1
+		logFiles.Files[idx] = filepath.Join(dir, prefix+strconv.Itoa(logFiles.value[idx])+ext)
 
-		if logFiles.Files[i] == f {
+		if logFiles.Files[idx] == filePath {
 			continue // this shouldn't happen.
 		}
 
 		// fmt.Printf("\nrenaming [%d] %s -> %s\n", i, f, logFiles.Files[i])
-		if err := l.Rename(f, logFiles.Files[i]); err != nil {
+		if err := l.Rename(filePath, logFiles.Files[idx]); err != nil {
 			return "", fmt.Errorf("error rotating file: %w", err)
 		}
 	}
@@ -57,16 +57,16 @@ func (l *Layout) deleteOldLogsDesc(logFiles *backupFiles) (*backupFiles, error) 
 		return files, nil
 	}
 
-	for i, f := range logFiles.Files {
+	for idx, filePath := range logFiles.Files {
 		if count < l.FileCount {
-			files.Files = append(files.Files, f)
-			files.value = append(files.value, logFiles.value[i])
+			files.Files = append(files.Files, filePath)
+			files.value = append(files.value, logFiles.value[idx])
 
 			continue
 		}
 
-		// fmt.Println("deleted", f, count)
-		if err := l.Remove(f); err != nil {
+		// fmt.Println("deleted", filePath, count)
+		if err := l.Remove(filePath); err != nil {
 			return files, fmt.Errorf("error removing file: %w", err)
 		}
 
