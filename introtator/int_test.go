@@ -84,7 +84,7 @@ func TestRotateFirst(t *testing.T) {
 	// Test a couple errors.
 	mockFiler.EXPECT().ReadDir(layout.ArchiveDir).Times(2)
 	mockFiler.EXPECT().Rename(filepath.Join("/", "var", "log", "service.log"),
-		filepath.Join(layout.ArchiveDir, "service.1.log")).Times(2).Return(errTest)
+		path.Join(layout.ArchiveDir, "service.1.log")).Times(2).Return(errTest)
 	//
 	file, err = layout.Rotate("/var/log/service.log")
 	assert.Empty(file, "the file must be empty when rotation fails.")
