@@ -43,8 +43,8 @@ func TestRotateSize(t *testing.T) {
 
 	mockRotatorr := mocks.NewMockRotatorr(mockCtrl)
 	testFile := filepath.Join(os.TempDir(), "mylog.log")
-	_ = os.Remove(testFile)
 
+	assert.NoError(os.Remove(testFile), "could not remove temp test log file")
 	mockRotatorr.EXPECT().Dirs(gomock.Any())
 	//
 	logger, err := rotatorr.New(&rotatorr.Config{
@@ -57,6 +57,10 @@ func TestRotateSize(t *testing.T) {
 
 		return
 	}
+
+	stat, _ := logger.File.Stat()
+	log.Println(stat.Size(), stat.Name())
+
 	//
 	msg := []byte("log message")                                                                // len: 11
 	s, err := logger.Write(append(append(append(append(msg, msg...), msg...), msg...), msg...)) // len: 55
@@ -68,11 +72,14 @@ func TestRotateSize(t *testing.T) {
 		assert.Equal(len(msg), s)
 	}
 
-	mockRotatorr.EXPECT().Rotate(testFile)
+	stat, _ = logger.File.Stat()
+	log.Println(stat.Size(), stat.Name())
+
 	check(logger.Write(msg)) // 11
 	check(logger.Write(msg)) // 22
 	check(logger.Write(msg)) // 33
 	check(logger.Write(msg)) // 44
+	mockRotatorr.EXPECT().Rotate(testFile)
 	check(logger.Write(msg)) // 55 > 50, rotate!
 }
 
