@@ -52,7 +52,7 @@ func TestRotateAsc(t *testing.T) {
 	// Make sure files rotate correctly.. we have some extras to delete too.
 	fakes, fakeFiles := testFakeFiles(mockCtrl, 10)
 	gomock.InOrder(
-		mockFiler.EXPECT().ReadDir("/var/log").Return(fakeFiles, nil),
+		mockFiler.EXPECT().ReadDir(filepath.Join("/", "var", "log")).Return(fakeFiles, nil),
 		mockFiler.EXPECT().Rename("/var/log/service.10.log.gz", "/var/log/service.11.log.gz"),
 		mockFiler.EXPECT().Rename("/var/log/service.9.log.gz", "/var/log/service.10.log.gz"),
 		mockFiler.EXPECT().Rename("/var/log/service.8.log.gz", "/var/log/service.9.log.gz"),

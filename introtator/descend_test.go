@@ -30,7 +30,7 @@ func TestRotateDesc(t *testing.T) {
 	mockFiler.EXPECT().Rename("/var/log/service.log", filepath.Join("/", "var", "log", "service.1.log"))
 	//
 	file, err := layout.Rotate("/var/log/service.log")
-	assert.Equal("/var/log/service.1.log", file)
+	assert.Equal(filepath.Join("/", "var", "log", "service.1.log"), file)
 	assert.Nil(err)
 
 	// Make sure files rotate correctly.. we have some extras to delete too.

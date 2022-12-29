@@ -83,7 +83,7 @@ func TestRotateFirst(t *testing.T) {
 
 	// Test a couple errors.
 	mockFiler.EXPECT().ReadDir(layout.ArchiveDir).Times(2)
-	mockFiler.EXPECT().Rename(filepath.Join("/", "var", "log", "service.log"),
+	mockFiler.EXPECT().Rename(path.Join("/", "var", "log", "service.log"),
 		path.Join(layout.ArchiveDir, "service.1.log")).Times(2).Return(errTest)
 	//
 	file, err = layout.Rotate("/var/log/service.log")
