@@ -36,22 +36,25 @@ func TestRotateDesc(t *testing.T) {
 
 	// Make sure files rotate correctly.. we have some extras to delete too.
 	fakes, fakeFiles := testFakeFiles(mockCtrl, 10)
-	//nolint:gocritic
 	gomock.InOrder(
 		mockFiler.EXPECT().ReadDir(filepath.Join("/", "var", "log")).Return(fakeFiles, nil),
 		// We should only have 5 backup log files.
-		mockFiler.EXPECT().Remove(filepath.Join("/var/log/service.1.log.gz")),
-		mockFiler.EXPECT().Remove(filepath.Join("/var/log/service.2.log.gz")),
-		mockFiler.EXPECT().Remove(filepath.Join("/var/log/service.3.log.gz")),
-		mockFiler.EXPECT().Remove(filepath.Join("/var/log/service.4.log.gz")),
-		mockFiler.EXPECT().Remove(filepath.Join("/var/log/service.5.log.gz")),
-		mockFiler.EXPECT().Remove(filepath.Join("/var/log/service.6.log.gz")),
-		mockFiler.EXPECT().Rename(filepath.Join("/var/log/service.7.log.gz"), filepath.Join("/var/log/service.1.log.gz")),
-		mockFiler.EXPECT().Rename(filepath.Join("/var/log/service.8.log.gz"), filepath.Join("/var/log/service.2.log.gz")),
-		mockFiler.EXPECT().Rename(filepath.Join("/var/log/service.9.log.gz"), filepath.Join("/var/log/service.3.log.gz")),
-		mockFiler.EXPECT().Rename(filepath.Join("/var/log/service.10.log.gz"), filepath.Join("/var/log/service.4.log.gz")),
+		mockFiler.EXPECT().Remove(filepath.Join("/", "var", "log", "service.1.log.gz")),
+		mockFiler.EXPECT().Remove(filepath.Join("/", "var", "log", "service.2.log.gz")),
+		mockFiler.EXPECT().Remove(filepath.Join("/", "var", "log", "service.3.log.gz")),
+		mockFiler.EXPECT().Remove(filepath.Join("/", "var", "log", "service.4.log.gz")),
+		mockFiler.EXPECT().Remove(filepath.Join("/", "var", "log", "service.5.log.gz")),
+		mockFiler.EXPECT().Remove(filepath.Join("/", "var", "log", "service.6.log.gz")),
+		mockFiler.EXPECT().Rename(filepath.Join("/", "var", "log", "service.7.log.gz"),
+			filepath.Join("/", "var", "log", "service.1.log.gz")),
+		mockFiler.EXPECT().Rename(filepath.Join("/", "var", "log", "service.8.log.gz"),
+			filepath.Join("/", "var", "log", "service.2.log.gz")),
+		mockFiler.EXPECT().Rename(filepath.Join("/", "var", "log", "service.9.log.gz"),
+			filepath.Join("/", "var", "log", "service.3.log.gz")),
+		mockFiler.EXPECT().Rename(filepath.Join("/", "var", "log", "service.10.log.gz"),
+			filepath.Join("/", "var", "log", "service.4.log.gz")),
 		mockFiler.EXPECT().Rename(filepath.Join("/", "var", "log", "service.log"),
-			filepath.Join("/var/log/service.5.log")), // no gz.
+			filepath.Join("/", "var", "log", "service.5.log")), // no gz.
 	)
 	//
 	for i := range fakes {
@@ -59,13 +62,13 @@ func TestRotateDesc(t *testing.T) {
 	}
 	//
 	file, err = layout.Rotate(filepath.Join("/", "var", "log", "service.log"))
-	assert.Equal("/var/log/service.5.log", file)
+	assert.Equal(filepath.Join("/", "var", "log", "service.5.log"), file)
 	assert.Nil(err)
 
 	// Make sure a delete failure returns an error.
 	gomock.InOrder(
 		mockFiler.EXPECT().ReadDir(filepath.Join("/", "var", "log")).Return(fakeFiles, nil),
-		mockFiler.EXPECT().Remove("/var/log/service.1.log.gz").Return(errTest),
+		mockFiler.EXPECT().Remove(filepath.Join("/", "var", "log", "service.1.log.gz")).Return(errTest),
 	)
 	//
 	for i := range fakes {
