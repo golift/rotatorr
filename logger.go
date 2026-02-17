@@ -23,6 +23,10 @@ const (
 // struct members are omitted.
 const DefaultMaxSize = 10 * 1024 * 1024
 
+// openRetryInterval is how long to wait before retrying openLog after a failure.
+// Prevents a storm of syscalls when the log file has permission or other persistent errors.
+const openRetryInterval = 10 * time.Second
+
 // Custom errors returned by this package.
 var (
 	ErrWriteTooLarge = fmt.Errorf("log msg length exceeds max file size")
@@ -51,6 +55,8 @@ type Logger struct {
 	File        *os.File      // The active open file. Useful for direct writing.
 	Interface   Rotatorr      // copied from config for brevity.
 	filer.Filer               // overridable file system procedures.
+	lastOpenErr error         // last error from openLog; used to avoid retry storm.
+	lastOpened  time.Time     // when openLog was last attempted (for backoff).
 }
 
 // resp is used to send responses back across our go routines.
@@ -224,11 +230,19 @@ func (l *Logger) write(b []byte) (int, error) {
 // checkAndRotate gets the current file's size and creation time.
 // Checks if it's too large or too old, and rotates it if so.
 // Makes sure the log file is open and ready for writing.
+// When the log file cannot be opened (e.g. permission denied), retries are backed off
+// to avoid a storm of syscalls that can cause high CPU and IO.
 func (l *Logger) checkAndRotate(size int64) error {
 	if l.File == nil {
+		if l.lastOpenErr != nil && time.Since(l.lastOpened) < openRetryInterval {
+			return l.lastOpenErr
+		}
+		l.lastOpened = time.Now()
 		if err := l.openLog(); err != nil {
+			l.lastOpenErr = err
 			return err
 		}
+		l.lastOpenErr = nil
 	}
 
 	if l.config.FileSize > 0 && size > l.config.FileSize {
@@ -270,7 +284,14 @@ func (l *Logger) rotate() (int64, error) {
 		return size, fmt.Errorf("error rotatorring: %w", err)
 	}
 
-	return size, l.openLog()
+	err = l.openLog()
+	if err == nil {
+		l.lastOpenErr = nil
+	} else {
+		l.lastOpenErr = err
+		l.lastOpened = time.Now()
+	}
+	return size, err
 }
 
 // Close stops the go routines, closes the active log file session and all channels.
