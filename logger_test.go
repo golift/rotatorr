@@ -29,8 +29,8 @@ func TestNew(t *testing.T) {
 	assert.ErrorIs(err, rotatorr.ErrWriteTooLarge)
 	//
 	_, err = logger.Rotate()
-	assert.Nil(err)
-	assert.Nil(logger.Close())
+	assert.NoError(err)
+	assert.NoError(logger.Close())
 }
 
 func TestRotateSize(t *testing.T) {
@@ -41,7 +41,7 @@ func TestRotateSize(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	mockRotatorr := mocks.NewMockRotatorr(mockCtrl)
-	testFile, err := os.CreateTemp("", "*.log")
+	testFile, err := os.CreateTemp(t.TempDir(), "*.log")
 	assert.NoError(err, "problem creating temp file")
 	assert.NoError(testFile.Close(), "problem closing temp file")
 	mockRotatorr.EXPECT().Dirs(gomock.Any())
@@ -52,7 +52,7 @@ func TestRotateSize(t *testing.T) {
 		Rotatorr: mockRotatorr,
 	})
 	if err != nil {
-		assert.Nil(err)
+		assert.NoError(err)
 
 		return
 	}
@@ -64,7 +64,7 @@ func TestRotateSize(t *testing.T) {
 	assert.Equal(0, s, "size must be 0 if the write fails.")
 
 	check := func(s int, err error) {
-		assert.Nil(err)
+		assert.NoError(err)
 		assert.Equal(len(msg), s)
 	}
 
@@ -84,7 +84,7 @@ func TestRotateEvery(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	mockRotatorr := mocks.NewMockRotatorr(mockCtrl)
-	testFile, err := os.CreateTemp("", "*.log")
+	testFile, err := os.CreateTemp(t.TempDir(), "*.log")
 	assert.NoError(err, "problem creating temp file")
 	assert.NoError(testFile.Close(), "problem closing temp file")
 	mockRotatorr.EXPECT().Dirs(gomock.Any())
@@ -96,18 +96,18 @@ func TestRotateEvery(t *testing.T) {
 		Rotatorr: mockRotatorr,
 	})
 	if err != nil {
-		assert.Nil(err)
+		assert.NoError(err)
 
 		return
 	}
 	//
 	msg := "log message"                                        // len: 11
 	s, err := logger.Write([]byte(msg + msg + msg + msg + msg)) // len: 55
-	assert.Nil(err)
+	assert.NoError(err)
 	assert.Equal(len(msg)*5, s)
 
 	check := func(s int, err error) {
-		assert.Nil(err)
+		assert.NoError(err)
 		assert.Equal(len(msg), s)
 	}
 	check(logger.Write([]byte(msg))) // 11

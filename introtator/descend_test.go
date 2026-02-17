@@ -32,7 +32,7 @@ func TestRotateDesc(t *testing.T) {
 	//
 	file, err := layout.Rotate(filepath.Join("/", "var", "log", "service.log"))
 	assert.Equal(filepath.Join("/", "var", "log", "service.1.log"), file)
-	assert.Nil(err)
+	assert.NoError(err)
 
 	// Make sure files rotate correctly.. we have some extras to delete too.
 	fakes, fakeFiles := testFakeFiles(mockCtrl, 10)
@@ -63,7 +63,7 @@ func TestRotateDesc(t *testing.T) {
 	//
 	file, err = layout.Rotate(filepath.Join("/", "var", "log", "service.log"))
 	assert.Equal(filepath.Join("/", "var", "log", "service.5.log"), file)
-	assert.Nil(err)
+	assert.NoError(err)
 
 	// Make sure a delete failure returns an error.
 	gomock.InOrder(

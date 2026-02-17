@@ -82,7 +82,7 @@ func CompressBackground(fileName string, cb func(report *Report)) {
 }
 
 // CompressWithLog is the same as Compress, except it writes a report log instead of returning it.
-func CompressWithLog(fileName string, printf func(msg string, fmt ...interface{})) {
+func CompressWithLog(fileName string, printf func(msg string, fmt ...any)) {
 	report, _ := Compress(fileName)
 	go Log(report, printf) // in a go routine to avoid possible deadlock with rotatorr.
 }
@@ -106,12 +106,12 @@ func CompressPostRotate(_, fileName string) {
 // CompressBackgroundWithLog like CompressBackground runs a file compression in
 // the background, but writes a log message when finished instead of a callback.
 // Avoid using this on files that may be renamed by another thread.
-func CompressBackgroundWithLog(fileName string, printf func(msg string, fmt ...interface{})) {
+func CompressBackgroundWithLog(fileName string, printf func(msg string, fmt ...any)) {
 	CompressBackground(fileName, func(report *Report) { Log(report, printf) })
 }
 
 // Log sends a report to a custom procedure.
-func Log(report *Report, printf func(msg string, fmt ...interface{})) {
+func Log(report *Report, printf func(msg string, fmt ...any)) {
 	if printf == nil {
 		printf = log.Printf
 	}
@@ -164,7 +164,7 @@ func compress(oldFile, newFile string, mode os.FileMode, level int) (int64, erro
 
 	gzw, _ := gzip.NewWriterLevel(gzf, level)
 	defer gzw.Close()
-	gzw.Comment = reflect.TypeOf(Report{}).PkgPath()
+	gzw.Comment = reflect.TypeFor[Report]().PkgPath()
 
 	size, err = io.Copy(gzw, ncf)
 	if err != nil {

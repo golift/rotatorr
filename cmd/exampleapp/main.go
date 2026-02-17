@@ -74,7 +74,8 @@ func makeLogs() {
 	for range ticker.C {
 		fmt.Print(".")
 
-		if err := log.Output(0, logLine); err != nil {
+		err := log.Output(0, logLine)
+		if err != nil {
 			panic(err)
 		}
 	}
@@ -119,7 +120,7 @@ func getPost() func(string, string) {
 	if isArg("compress") {
 		return func(fileName, newFile string) {
 			fmt.Printf("\nfile rotated: %s -> %s\n", fileName, newFile)
-			compressor.CompressBackgroundWithLog(newFile, func(s string, v ...interface{}) { fmt.Printf(s, v...) })
+			compressor.CompressBackgroundWithLog(newFile, func(s string, v ...any) { fmt.Printf(s, v...) })
 			fmt.Println("compressed", newFile)
 		}
 	}

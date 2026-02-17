@@ -32,6 +32,7 @@ func Default() Filer {
 // Created by Stat(). Sorry in advance.
 type FileInfo struct {
 	os.FileInfo
+
 	CreateTime time.Time
 }
 

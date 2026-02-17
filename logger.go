@@ -29,8 +29,8 @@ const openRetryInterval = 10 * time.Second
 
 // Custom errors returned by this package.
 var (
-	ErrWriteTooLarge = fmt.Errorf("log msg length exceeds max file size")
-	ErrNilInterface  = fmt.Errorf("nil Rotatorr interface provided")
+	ErrWriteTooLarge = errors.New("log msg length exceeds max file size")
+	ErrNilInterface  = errors.New("nil Rotatorr interface provided")
 )
 
 // Config is the data needed to create a new Log Rotatorr.
@@ -70,7 +70,8 @@ type resp struct {
 // post-actions like compression.
 func New(config *Config) (*Logger, error) {
 	logger := &Logger{config: config, Interface: config.Rotatorr, Filer: filer.Default()}
-	if err := logger.initialize(false); err != nil {
+	err := logger.initialize(false)
+	if err != nil {
 		return nil, err
 	}
 
@@ -83,7 +84,8 @@ func New(config *Config) (*Logger, error) {
 func NewMust(config *Config) *Logger {
 	logger := &Logger{config: config, Interface: config.Rotatorr, Filer: filer.Default()}
 
-	if err := logger.initialize(true); errors.Is(err, ErrNilInterface) {
+	err := logger.initialize(true)
+	if errors.Is(err, ErrNilInterface) {
 		panic(err)
 	}
 
@@ -119,7 +121,7 @@ func (l *Logger) initialize(ignoreErrors bool) error {
 func (l *Logger) setConfigDefaults() error {
 	if l.config.Filepath == "" {
 		l.config.Filepath = filepath.Join(os.TempDir(),
-			filepath.Base(os.Args[0])+"-"+path.Dir(reflect.TypeOf(Logger{}).PkgPath())+".log")
+			filepath.Base(os.Args[0])+"-"+path.Dir(reflect.TypeFor[Logger]().PkgPath())+".log")
 	}
 
 	if l.config.Every == 0 && l.config.FileSize == 0 {
@@ -140,7 +142,8 @@ func (l *Logger) setConfigDefaults() error {
 	}
 
 	for _, dir := range dirs {
-		if err := l.MkdirAll(dir, l.config.DirMode); err != nil {
+		err := l.MkdirAll(dir, l.config.DirMode)
+		if err != nil {
 			return fmt.Errorf("making directories for logfiles: %w", err)
 		}
 	}
@@ -239,8 +242,10 @@ func (l *Logger) checkAndRotate(size int64) error {
 		}
 
 		l.lastOpened = time.Now()
-		if err := l.openLog(); err != nil {
+		err := l.openLog()
+		if err != nil {
 			l.lastOpenErr = err
+
 			return err
 		}
 

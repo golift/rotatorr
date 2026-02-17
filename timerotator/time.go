@@ -63,7 +63,8 @@ func (l *Layout) Rotate(fileName string) (string, error) {
 		newFile = filepath.Join(dir, l.getPrefix(fileName)+now.Format(l.Format)+LogExt)
 	)
 
-	if err := l.Rename(fileName, newFile); err != nil {
+	err := l.Rename(fileName, newFile)
+	if err != nil {
 		return "", fmt.Errorf("error renaming log: %w", err)
 	}
 

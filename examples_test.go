@@ -133,7 +133,7 @@ func Example_compressor() {
 // Example_compressor_log shows how to format a post-rotate compression log line.
 func Example_compressorWithLog() {
 	post := func(_, fileName string) {
-		printf := func(msg string, v ...interface{}) {
+		printf := func(msg string, v ...any) {
 			log.Printf("[Rotatorr] %s", v...)
 		}
 		compressor.CompressBackgroundWithLog(fileName, printf)

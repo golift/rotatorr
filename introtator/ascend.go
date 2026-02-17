@@ -34,13 +34,15 @@ func (l *Layout) rotateAscending(logFiles *backupFiles, fileName string) (string
 			logFiles.Files[idx] = filepath.Join(dir, prefix+strconv.Itoa(logFiles.value[idx])+ext)
 
 			// fmt.Printf("\nrenaming [%d] %s -> %s\n", i, f, logFiles.Files[i])
-			if err := l.Rename(filePath, logFiles.Files[idx]); err != nil {
+			err := l.Rename(filePath, logFiles.Files[idx])
+			if err != nil {
 				return "", fmt.Errorf("error rotating backup file: %w", err)
 			}
 		}
 	}
 
-	if err := l.Rename(fileName, newPath); err != nil {
+	err := l.Rename(fileName, newPath)
+	if err != nil {
 		return "", fmt.Errorf("error rotating file: %w", err)
 	}
 
@@ -63,7 +65,8 @@ func (l *Layout) deleteOldLogsAsc(logFiles *backupFiles) error {
 			break
 		}
 
-		if err := l.Remove(f); err != nil {
+		err := l.Remove(f)
+		if err != nil {
 			return fmt.Errorf("error removing file: %w", err)
 		}
 

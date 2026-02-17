@@ -36,10 +36,10 @@ func TestDirs(t *testing.T) {
 	f, err := layout.Dirs(filepath.Join("/", "var", "log", "service.log"))
 	assert.Equal([]string{filepath.Join("/", "var", "log"), filepath.Join("/", "var", "log", "archives")},
 		f, "the wrong directories were returned")
-	assert.Nil(err, "this should not producce an error")
-	assert.EqualValues(filer.Default(), layout.Filer)
-	assert.Equal(layout.Joiner, timerotator.DefaultJoiner)
-	assert.Equal(layout.Format, timerotator.FormatDefault)
+	assert.NoError(err, "this should not producce an error")
+	assert.Equal(filer.Default(), layout.Filer)
+	assert.Equal(timerotator.DefaultJoiner, layout.Joiner)
+	assert.Equal(timerotator.FormatDefault, layout.Format)
 }
 
 func TestRotateOne(t *testing.T) {
@@ -64,7 +64,7 @@ func TestRotateOne(t *testing.T) {
 	//
 	file, err := layout.Rotate(filepath.Join("/", "var", "log", "service.log"))
 	assert.Equal(newName, file)
-	assert.Nil(err)
+	assert.NoError(err)
 }
 
 // Make fake files to fake delete.
@@ -74,7 +74,7 @@ func testFakeFiles(mockCtrl *gomock.Controller, count int) ([]*mocks.MockFileInf
 		files = make([]os.FileInfo, count)
 	)
 
-	for i := 0; i < count; i++ {
+	for i := range count {
 		fake := mocks.NewMockFileInfo(mockCtrl)
 		fakes[i] = fake
 		files[i] = fake
@@ -126,5 +126,5 @@ func TestRotateDelete(t *testing.T) {
 	//
 	file, err := layout.Rotate(filepath.Join("/", "var", "log", "service.log"))
 	assert.Equal(newName, file)
-	assert.Nil(err)
+	assert.NoError(err)
 }

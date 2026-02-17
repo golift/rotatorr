@@ -18,7 +18,7 @@ func testFakeFiles(mockCtrl *gomock.Controller, count int) ([]*mocks.MockFileInf
 		files = make([]os.FileInfo, count)
 	)
 
-	for i := 0; i < count; i++ {
+	for i := range count {
 		fake := mocks.NewMockFileInfo(mockCtrl)
 		fakes[i] = fake
 		files[i] = fake
@@ -48,7 +48,7 @@ func TestRotateAsc(t *testing.T) {
 	//
 	file, err := layout.Rotate(filepath.Join("/", "var", "log", "service.log"))
 	assert.Equal(filepath.Join("/", "var", "log", "service.1.log"), file)
-	assert.Nil(err)
+	assert.NoError(err)
 
 	// Make sure files rotate correctly.. we have some extras to delete too.
 	fakes, fakeFiles := testFakeFiles(mockCtrl, 10)
@@ -91,5 +91,5 @@ func TestRotateAsc(t *testing.T) {
 	//
 	file, err = layout.Rotate(filepath.Join("/", "var", "log", "service.log"))
 	assert.Equal(filepath.Join("/", "var", "log", "service.1.log"), file)
-	assert.Nil(err)
+	assert.NoError(err)
 }
