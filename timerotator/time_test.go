@@ -1,17 +1,25 @@
 package timerotator_test
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	gomock "go.uber.org/mock/gomock"
 	"golift.io/rotatorr/filer"
 	"golift.io/rotatorr/mocks"
 	"golift.io/rotatorr/timerotator"
 )
+
+// dirEntryWrap adapts os.FileInfo to fs.DirEntry for Filer.ReadDir ([]os.DirEntry).
+type dirEntryWrap struct{ os.FileInfo }
+
+func (d dirEntryWrap) Type() fs.FileMode          { return d.FileInfo.Mode().Type() }
+func (d dirEntryWrap) Info() (os.FileInfo, error) { return d.FileInfo, nil }
 
 func TestPost(t *testing.T) {
 	t.Parallel()
@@ -36,7 +44,7 @@ func TestDirs(t *testing.T) {
 	f, err := layout.Dirs(filepath.Join("/", "var", "log", "service.log"))
 	assert.Equal([]string{filepath.Join("/", "var", "log"), filepath.Join("/", "var", "log", "archives")},
 		f, "the wrong directories were returned")
-	assert.NoError(err, "this should not producce an error")
+	require.NoError(t, err, "this should not producce an error")
 	assert.Equal(filer.Default(), layout.Filer)
 	assert.Equal(timerotator.DefaultJoiner, layout.Joiner)
 	assert.Equal(timerotator.FormatDefault, layout.Format)
@@ -64,23 +72,23 @@ func TestRotateOne(t *testing.T) {
 	//
 	file, err := layout.Rotate(filepath.Join("/", "var", "log", "service.log"))
 	assert.Equal(newName, file)
-	assert.NoError(err)
+	require.NoError(t, err)
 }
 
 // Make fake files to fake delete.
-func testFakeFiles(mockCtrl *gomock.Controller, count int) ([]*mocks.MockFileInfo, []os.FileInfo) {
+func testFakeFiles(mockCtrl *gomock.Controller, count int) ([]*mocks.MockFileInfo, []os.DirEntry) {
 	var (
-		fakes = make([]*mocks.MockFileInfo, count)
-		files = make([]os.FileInfo, count)
+		fakes   = make([]*mocks.MockFileInfo, count)
+		entries = make([]os.DirEntry, count)
 	)
 
 	for i := range count {
 		fake := mocks.NewMockFileInfo(mockCtrl)
 		fakes[i] = fake
-		files[i] = fake
+		entries[i] = dirEntryWrap{fake}
 	}
 
-	return fakes, files
+	return fakes, entries
 }
 
 func TestRotateDelete(t *testing.T) {
@@ -91,7 +99,7 @@ func TestRotateDelete(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	mockFiler := mocks.NewMockFiler(mockCtrl)
-	fakes, fakeFiles := testFakeFiles(mockCtrl, 10)
+	fakes, fakeEntries := testFakeFiles(mockCtrl, 10)
 	layout := &timerotator.Layout{
 		ArchiveDir: filepath.Join("/", "var", "log", "archives"),
 		Filer:      mockFiler,
@@ -105,7 +113,7 @@ func TestRotateDelete(t *testing.T) {
 		"service"+layout.Joiner+time.Now().UTC().Format(layout.Format)+".log")
 
 	// Basic test representing first rotate (no existing files).
-	mockFiler.EXPECT().ReadDir(layout.ArchiveDir).Return(fakeFiles, nil)
+	mockFiler.EXPECT().ReadDir(layout.ArchiveDir).Return(fakeEntries, nil)
 	mockFiler.EXPECT().Rename(filepath.Join("/", "var", "log", "service.log"), newName)
 
 	for idx := range fakes {
@@ -126,5 +134,5 @@ func TestRotateDelete(t *testing.T) {
 	//
 	file, err := layout.Rotate(filepath.Join("/", "var", "log", "service.log"))
 	assert.Equal(newName, file)
-	assert.NoError(err)
+	require.NoError(t, err)
 }

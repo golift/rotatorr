@@ -8,7 +8,6 @@ package filer
 //go:generate mockgen -destination=../mocks/fileinfo.go -package=mocks os FileInfo
 
 import (
-	"io/ioutil"
 	"os"
 	"time"
 )
@@ -17,7 +16,7 @@ import (
 type Filer interface {
 	Remove(fileName string) error
 	Rename(fileName, newPath string) error
-	ReadDir(dirPath string) ([]os.FileInfo, error)
+	ReadDir(dirPath string) ([]os.DirEntry, error)
 	MkdirAll(path string, perm os.FileMode) error
 	OpenFile(name string, flag int, perm os.FileMode) (*os.File, error)
 	Stat(filename string) (*FileInfo, error)
@@ -50,8 +49,8 @@ func (f *File) Rename(fileName, newPath string) error {
 }
 
 // ReadDir provides ioutil.ReadDir.
-func (f *File) ReadDir(dirname string) ([]os.FileInfo, error) {
-	return ioutil.ReadDir(dirname)
+func (f *File) ReadDir(dirname string) ([]os.DirEntry, error) {
+	return os.ReadDir(dirname)
 }
 
 // MkdirAll provides os.MkdirAll.

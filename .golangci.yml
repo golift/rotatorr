@@ -1,38 +1,32 @@
 version: '2'
+
 linters:
   default: all
   disable:
     - exhaustruct
-    - wsl_v5
+    - wsl
+    - depguard
   exclusions:
-    generated: lax
     presets:
-      - comments
       - common-false-positives
-      - legacy
       - std-error-handling
     rules:
-      - linters:
+      - path: (.+)_test\.go
+        linters:
           - funlen
           - testableexamples
-        path: (.+)_test\.go
-      - linters:
+      - path: cmd/exampleapp
+        linters:
           - forbidigo
           - wrapcheck
-        path: cmd/exampleapp
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
+  settings:
+    wsl_v5:
+      allow-first-in-block: true
+      branch-max-lines: 3
+
 formatters:
   enable:
     - gci
     - gofmt
     - gofumpt
     - goimports
-  exclusions:
-    generated: lax
-    paths:
-      - third_party$
-      - builtin$
-      - examples$

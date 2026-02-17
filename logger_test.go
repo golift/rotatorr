@@ -6,8 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	gomock "go.uber.org/mock/gomock"
 	"golift.io/rotatorr"
 	"golift.io/rotatorr/introtator"
 	"golift.io/rotatorr/mocks"
@@ -25,11 +26,12 @@ func TestNew(t *testing.T) {
 	log.SetOutput(logger)
 	log.Println("weeeeeeeee!")
 	log.Println("weee!")
+
 	err := log.Output(1, "weeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee!")
-	assert.ErrorIs(err, rotatorr.ErrWriteTooLarge)
+	require.ErrorIs(t, err, rotatorr.ErrWriteTooLarge)
 	//
 	_, err = logger.Rotate()
-	assert.NoError(err)
+	require.NoError(t, err)
 	assert.NoError(logger.Close())
 }
 
@@ -60,11 +62,11 @@ func TestRotateSize(t *testing.T) {
 	//
 	msg := "log message"                                        // len: 11
 	s, err := logger.Write([]byte(msg + msg + msg + msg + msg)) // len: 55
-	assert.ErrorIs(err, rotatorr.ErrWriteTooLarge, "writing more data than our filesize must produce an error")
+	require.ErrorIs(t, err, rotatorr.ErrWriteTooLarge, "writing more data than our filesize must produce an error")
 	assert.Equal(0, s, "size must be 0 if the write fails.")
 
 	check := func(s int, err error) {
-		assert.NoError(err)
+		require.NoError(t, err)
 		assert.Equal(len(msg), s)
 	}
 
@@ -103,11 +105,11 @@ func TestRotateEvery(t *testing.T) {
 	//
 	msg := "log message"                                        // len: 11
 	s, err := logger.Write([]byte(msg + msg + msg + msg + msg)) // len: 55
-	assert.NoError(err)
+	require.NoError(t, err)
 	assert.Equal(len(msg)*5, s)
 
 	check := func(s int, err error) {
-		assert.NoError(err)
+		require.NoError(t, err)
 		assert.Equal(len(msg), s)
 	}
 	check(logger.Write([]byte(msg))) // 11

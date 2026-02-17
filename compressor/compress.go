@@ -155,15 +155,17 @@ func compress(oldFile, newFile string, mode os.FileMode, level int) (int64, erro
 	}
 
 	defer func() {
-		gzf.Close()
+		_ = gzf.Close()
 		// Set size of new file.
-		if fs, err := Filer.Stat(newFile); err == nil {
+		fs, err := Filer.Stat(newFile)
+		if err == nil {
 			size = fs.Size()
 		}
 	}()
 
 	gzw, _ := gzip.NewWriterLevel(gzf, level)
 	defer gzw.Close()
+
 	gzw.Comment = reflect.TypeFor[Report]().PkgPath()
 
 	size, err = io.Copy(gzw, ncf)

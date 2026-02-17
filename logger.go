@@ -46,6 +46,8 @@ type Config struct {
 // Logger is what you get in return for providing a Config. Use this to set log output.
 // You must obtain a Logger by calling one of the New() procedures.
 type Logger struct {
+	filer.Filer // overridable file system procedures.
+
 	config      *Config       // incoming configurtation.
 	log         chan []byte   // incoming log messages passed across go routines.
 	resp        chan *resp    // response sent back across go routines.
@@ -54,7 +56,6 @@ type Logger struct {
 	created     time.Time     // the date the active open file was created.
 	File        *os.File      // The active open file. Useful for direct writing.
 	Interface   Rotatorr      // copied from config for brevity.
-	filer.Filer               // overridable file system procedures.
 	lastOpenErr error         // last error from openLog; used to avoid retry storm.
 	lastOpened  time.Time     // when openLog was last attempted (for backoff).
 }
@@ -70,6 +71,7 @@ type resp struct {
 // post-actions like compression.
 func New(config *Config) (*Logger, error) {
 	logger := &Logger{config: config, Interface: config.Rotatorr, Filer: filer.Default()}
+
 	err := logger.initialize(false)
 	if err != nil {
 		return nil, err
@@ -92,6 +94,35 @@ func NewMust(config *Config) *Logger {
 	return logger
 }
 
+// Write sends data directly to the file. This satisfies the io.ReadCloser interface.
+// You should generally not call this and instead pass *Logger into log.SetOutput().
+func (l *Logger) Write(b []byte) (int, error) {
+	l.log <- b
+
+	resp := <-l.resp
+
+	return int(resp.size), resp.err
+}
+
+// Rotate forces the log to rotate immediately. Returns the size of the rotated log.
+func (l *Logger) Rotate() (int64, error) {
+	l.signal <- struct{}{}
+
+	resp := <-l.resp
+
+	return resp.size, resp.err
+}
+
+// Close stops the go routines, closes the active log file session and all channels.
+// If another Write() is sent, a panic will ensue.
+func (l *Logger) Close() error {
+	defer close(l.resp)
+
+	close(l.signal)
+
+	return (<-l.resp).err
+}
+
 // initialize runs all the startup routines.
 func (l *Logger) initialize(ignoreErrors bool) error {
 	var err error
@@ -107,14 +138,15 @@ func (l *Logger) initialize(ignoreErrors bool) error {
 	}()
 
 	if l.Interface == nil {
-		err = ErrNilInterface
-	} else if err = l.setConfigDefaults(); err != nil {
-		return err
-	} else {
-		err = l.checkAndRotate(0)
+		return ErrNilInterface
 	}
 
-	return err
+	err = l.setConfigDefaults()
+	if err != nil {
+		return err
+	}
+
+	return l.checkAndRotate(0)
 }
 
 // setConfigDefaults does exactly what it says. Sets missing values.
@@ -186,7 +218,8 @@ func (l *Logger) openLog() error {
 
 	perm := os.O_WRONLY | os.O_APPEND
 
-	if info, err := l.Stat(l.config.Filepath); err != nil {
+	info, err := l.Stat(l.config.Filepath)
+	if err != nil {
 		// File doesn't exist, or something wrong, truncate it!
 		perm = os.O_WRONLY | os.O_TRUNC | os.O_CREATE
 		l.size = 0
@@ -205,22 +238,14 @@ func (l *Logger) openLog() error {
 	return nil
 }
 
-// Write sends data directly to the file. This satisfies the io.ReadCloser interface.
-// You should generally not call this and instead pass *Logger into log.SetOutput().
-func (l *Logger) Write(b []byte) (int, error) {
-	l.log <- b
-	resp := <-l.resp
-
-	return int(resp.size), resp.err
-}
-
 // write sends a message into the log file after everyhing checks out - from a channel message.
-func (l *Logger) write(b []byte) (int, error) {
-	if err := l.checkAndRotate(int64(len(b))); err != nil {
+func (l *Logger) write(bytes []byte) (int, error) {
+	err := l.checkAndRotate(int64(len(bytes)))
+	if err != nil {
 		return 0, err
 	}
 
-	size, err := l.File.Write(b)
+	size, err := l.File.Write(bytes)
 	l.size += int64(size)
 
 	if err != nil {
@@ -235,13 +260,14 @@ func (l *Logger) write(b []byte) (int, error) {
 // Makes sure the log file is open and ready for writing.
 // When the log file cannot be opened (e.g. permission denied), retries are backed off
 // to avoid a storm of syscalls that can cause high CPU and IO.
-func (l *Logger) checkAndRotate(size int64) error {
+func (l *Logger) checkAndRotate(size int64) error { //nolint:cyclop
 	if l.File == nil {
 		if l.lastOpenErr != nil && time.Since(l.lastOpened) < openRetryInterval {
 			return l.lastOpenErr
 		}
 
 		l.lastOpened = time.Now()
+
 		err := l.openLog()
 		if err != nil {
 			l.lastOpenErr = err
@@ -258,7 +284,8 @@ func (l *Logger) checkAndRotate(size int64) error {
 
 	if (l.config.FileSize != 0 && l.size+size > l.config.FileSize) ||
 		(l.config.Every != 0 && time.Now().After(l.created.Add(l.config.Every))) {
-		if _, err := l.rotate(); err != nil {
+		_, err := l.rotate()
+		if err != nil {
 			return err
 		}
 	}
@@ -266,19 +293,12 @@ func (l *Logger) checkAndRotate(size int64) error {
 	return nil
 }
 
-// Rotate forces the log to rotate immediately. Returns the size of the rotated log.
-func (l *Logger) Rotate() (int64, error) {
-	l.signal <- struct{}{}
-	resp := <-l.resp
-
-	return resp.size, resp.err
-}
-
 // rotate renames the log - from a channel message.
 func (l *Logger) rotate() (int64, error) {
 	size := l.size
 
-	if err := l.close(); err != nil {
+	err := l.close()
+	if err != nil {
 		return size, err
 	}
 
@@ -297,15 +317,6 @@ func (l *Logger) rotate() (int64, error) {
 	}
 
 	return size, l.lastOpenErr
-}
-
-// Close stops the go routines, closes the active log file session and all channels.
-// If another Write() is sent, a panic will ensue.
-func (l *Logger) Close() error {
-	defer close(l.resp)
-	close(l.signal)
-
-	return (<-l.resp).err
 }
 
 // close closes the active log file - from a channel message.

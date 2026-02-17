@@ -1,3 +1,4 @@
+// Package main is a simple example app to write logs to see log rotation in action.
 package main
 
 import (

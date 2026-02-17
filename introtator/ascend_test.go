@@ -1,30 +1,38 @@
 package introtator_test
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	gomock "go.uber.org/mock/gomock"
 	"golift.io/rotatorr/introtator"
 	"golift.io/rotatorr/mocks"
 )
 
-func testFakeFiles(mockCtrl *gomock.Controller, count int) ([]*mocks.MockFileInfo, []os.FileInfo) {
+// dirEntryWrap adapts os.FileInfo to fs.DirEntry for Filer.ReadDir ([]os.DirEntry).
+type dirEntryWrap struct{ os.FileInfo }
+
+func (d dirEntryWrap) Type() fs.FileMode          { return d.FileInfo.Mode().Type() }
+func (d dirEntryWrap) Info() (os.FileInfo, error) { return d.FileInfo, nil }
+
+func testFakeFiles(mockCtrl *gomock.Controller, count int) ([]*mocks.MockFileInfo, []os.DirEntry) {
 	var (
-		fakes = make([]*mocks.MockFileInfo, count)
-		files = make([]os.FileInfo, count)
+		fakes   = make([]*mocks.MockFileInfo, count)
+		entries = make([]os.DirEntry, count)
 	)
 
 	for i := range count {
 		fake := mocks.NewMockFileInfo(mockCtrl)
 		fakes[i] = fake
-		files[i] = fake
+		entries[i] = dirEntryWrap{fake}
 	}
 
-	return fakes, files
+	return fakes, entries
 }
 
 func TestRotateAsc(t *testing.T) {
@@ -48,7 +56,7 @@ func TestRotateAsc(t *testing.T) {
 	//
 	file, err := layout.Rotate(filepath.Join("/", "var", "log", "service.log"))
 	assert.Equal(filepath.Join("/", "var", "log", "service.1.log"), file)
-	assert.NoError(err)
+	require.NoError(t, err)
 
 	// Make sure files rotate correctly.. we have some extras to delete too.
 	fakes, fakeFiles := testFakeFiles(mockCtrl, 10)
@@ -91,5 +99,5 @@ func TestRotateAsc(t *testing.T) {
 	//
 	file, err = layout.Rotate(filepath.Join("/", "var", "log", "service.log"))
 	assert.Equal(filepath.Join("/", "var", "log", "service.1.log"), file)
-	assert.NoError(err)
+	require.NoError(t, err)
 }

@@ -36,11 +36,12 @@ const (
 // spend a lot of time renaming files. If you enable compression with a PostRotate
 // hook, make sure compression finishes before the files are rotated.
 type Layout struct {
+	filer.Filer
+
 	ArchiveDir string // Location where rotated backup logs are moved to.
 	FileCount  int    // Maximum number of rotated log files.
 	FileOrder  Order  // Control the order of the integer-named backup log files.
 	PostRotate func(fileName, newFile string)
-	filer.Filer
 }
 
 // Some constant this package uses.

@@ -5,8 +5,9 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	gomock "go.uber.org/mock/gomock"
 	"golift.io/rotatorr/introtator"
 	"golift.io/rotatorr/mocks"
 )
@@ -32,7 +33,7 @@ func TestRotateDesc(t *testing.T) {
 	//
 	file, err := layout.Rotate(filepath.Join("/", "var", "log", "service.log"))
 	assert.Equal(filepath.Join("/", "var", "log", "service.1.log"), file)
-	assert.NoError(err)
+	require.NoError(t, err)
 
 	// Make sure files rotate correctly.. we have some extras to delete too.
 	fakes, fakeFiles := testFakeFiles(mockCtrl, 10)
@@ -63,7 +64,7 @@ func TestRotateDesc(t *testing.T) {
 	//
 	file, err = layout.Rotate(filepath.Join("/", "var", "log", "service.log"))
 	assert.Equal(filepath.Join("/", "var", "log", "service.5.log"), file)
-	assert.NoError(err)
+	require.NoError(t, err)
 
 	// Make sure a delete failure returns an error.
 	gomock.InOrder(

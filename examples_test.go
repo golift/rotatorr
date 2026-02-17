@@ -107,7 +107,8 @@ func ExampleLogger_Rotate() {
 	go func() {
 		<-sigc
 
-		if _, err := rotator.Rotate(); err != nil {
+		_, err := rotator.Rotate()
+		if err != nil {
 			panic(err)
 		}
 	}()
@@ -133,7 +134,7 @@ func Example_compressor() {
 // Example_compressor_log shows how to format a post-rotate compression log line.
 func Example_compressorWithLog() {
 	post := func(_, fileName string) {
-		printf := func(msg string, v ...any) {
+		printf := func(_ string, v ...any) {
 			log.Printf("[Rotatorr] %s", v...)
 		}
 		compressor.CompressBackgroundWithLog(fileName, printf)

@@ -19,6 +19,8 @@ import (
 
 // Layout defines how time-stamped backup logs have their file names decided.
 type Layout struct {
+	filer.Filer
+
 	ArchiveDir string        // Location where rotated backup logs are moved to.
 	FileCount  int           // Maximum number of rotated log files.
 	FileAge    time.Duration // Maximum age of rotated files.
@@ -27,7 +29,6 @@ type Layout struct {
 	Joiner     string        // The string betwene the file name prefix and time stamp. Default: -
 	// Mockable interfaces. Can be used for custom processing. Setting these is very optional.
 	PostRotate func(fileName, newFile string)
-	filer.Filer
 }
 
 // Some Formats you may use in your app.
@@ -112,7 +113,10 @@ func (l *Layout) deleteOldLogs(logFiles *backupFiles) error {
 		for idx, when := range logFiles.value {
 			if time.Since(when) < l.FileAge {
 				continue
-			} else if err := l.Remove(logFiles.Files[idx]); err != nil {
+			}
+
+			err := l.Remove(logFiles.Files[idx])
+			if err != nil {
 				return fmt.Errorf("error removing file: %w", err)
 			}
 
@@ -123,12 +127,17 @@ func (l *Layout) deleteOldLogs(logFiles *backupFiles) error {
 	count := len(logFiles.Files) - len(gone)
 
 	if l.FileCount > 0 {
-		for _, f := range logFiles.Files {
+		for _, fileName := range logFiles.Files {
 			if count <= l.FileCount {
 				return nil
-			} else if _, ok := gone[f]; ok {
+			}
+
+			if _, ok := gone[fileName]; ok {
 				continue // already deleted this one.
-			} else if err := l.Remove(f); err != nil {
+			}
+
+			err := l.Remove(fileName)
+			if err != nil {
 				return fmt.Errorf("error removing file: %w", err)
 			}
 

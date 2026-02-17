@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golift.io/rotatorr/compressor"
 )
 
@@ -16,21 +17,21 @@ func TestCompress(t *testing.T) {
 	compressor.CompressLevel = 77
 
 	report, err := compressor.Compress("/does/not/exist/file")
-	assert.Error(err)
+	require.Error(t, err)
 	assert.Contains(err.Error(), "stating old file:")
-	assert.ErrorIs(err, report.Error)
+	require.ErrorIs(t, err, report.Error)
 
 	dir := os.TempDir()
-	err = os.MkdirAll(dir, 0o755)
-	assert.NoErrorf(err, "error creating test dir: %v", err)
+	err = os.MkdirAll(dir, 0o750)
+	require.NoError(t, err, "error creating test dir: %v", err)
 	oFile, err := os.Create(filepath.Join(dir, "testfile.log"))
-	assert.NoErrorf(err, "error creating test file: %v", err)
+	require.NoError(t, err, "error creating test file: %v", err)
 	_, err = oFile.Write(make([]byte, 300000))
-	assert.NoErrorf(err, "error writing test file: %v", err)
+	require.NoError(t, err, "error writing test file: %v", err)
 	report, err = compressor.Compress(oFile.Name())
-	assert.NoError(err)
-	assert.NoError(report.Error)
+	require.NoError(t, err)
+	require.NoError(t, report.Error)
 
 	// XXX: check report items.
-	os.Remove(oFile.Name())
+	_ = os.Remove(oFile.Name())
 }
