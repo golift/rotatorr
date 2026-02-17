@@ -6,6 +6,7 @@ linters:
     - exhaustruct
     - wsl
     - depguard
+    - nlreturn
   exclusions:
     presets:
       - common-false-positives
