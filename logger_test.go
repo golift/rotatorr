@@ -55,9 +55,10 @@ func TestRotateSize(t *testing.T) {
 	})
 	if err != nil {
 		assert.NoError(err)
-
 		return
 	}
+
+	defer logger.Close() // release file handle so t.TempDir() cleanup can remove files on Windows
 
 	//
 	msg := "log message"                                        // len: 11
@@ -99,9 +100,10 @@ func TestRotateEvery(t *testing.T) {
 	})
 	if err != nil {
 		assert.NoError(err)
-
 		return
 	}
+
+	defer logger.Close() // release file handle so t.TempDir() cleanup can remove files on Windows
 	//
 	msg := "log message"                                        // len: 11
 	s, err := logger.Write([]byte(msg + msg + msg + msg + msg)) // len: 55
