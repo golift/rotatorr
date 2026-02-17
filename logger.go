@@ -237,11 +237,13 @@ func (l *Logger) checkAndRotate(size int64) error {
 		if l.lastOpenErr != nil && time.Since(l.lastOpened) < openRetryInterval {
 			return l.lastOpenErr
 		}
+
 		l.lastOpened = time.Now()
 		if err := l.openLog(); err != nil {
 			l.lastOpenErr = err
 			return err
 		}
+
 		l.lastOpenErr = nil
 	}
 
@@ -284,14 +286,12 @@ func (l *Logger) rotate() (int64, error) {
 		return size, fmt.Errorf("error rotatorring: %w", err)
 	}
 
-	err = l.openLog()
-	if err == nil {
-		l.lastOpenErr = nil
-	} else {
-		l.lastOpenErr = err
+	l.lastOpenErr = l.openLog()
+	if l.lastOpenErr != nil {
 		l.lastOpened = time.Now()
 	}
-	return size, err
+
+	return size, l.lastOpenErr
 }
 
 // Close stops the go routines, closes the active log file session and all channels.
