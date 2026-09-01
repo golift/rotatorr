@@ -199,6 +199,7 @@ func testReopen(t *testing.T, renameFirst bool) {
 
 type statErrFiler struct {
 	filer.Filer
+
 	err error
 }
 
