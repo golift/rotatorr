@@ -8,10 +8,12 @@ package rotatorr
 type Rotatorr interface {
 	// Rotate is called any time a file needs to be rotated.
 	Rotate(fileName string) (newFile string, err error)
-	// Post is called after rotation finishes and the new file is created/opened.
-	// newFile is empty after Reopen() (same path, no backup). This is blocking,
-	// so if it does something like compress the rotated file, it should run in a
-	// go routine and return immediately.
+	// Post runs on the logger dispatch goroutine after Rotate, and after a
+	// successful Reopen once the live file is open. It blocks every Write until
+	// it returns, so compression (or anything slow) should start a goroutine.
+	// After Rotate, newFile is the backup path; Post still runs if openLog fails.
+	// After Reopen, newFile is empty: rotatorr created no backup, but an external
+	// tool may have moved the live file. Reopen does not call Post if openLog fails.
 	Post(fileName, newFile string)
 
 	// Dirs is called once on startup.

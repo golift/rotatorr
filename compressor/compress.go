@@ -35,8 +35,12 @@ type Report struct {
 }
 
 // Compress gzips a file and returns a report. Blocks until finished.
+// An empty fileName is a no-op (Post after Reopen has no backup to compress).
 func Compress(fileName string) (*Report, error) {
-	// fmt.Println("compressing", fileName)
+	if fileName == "" {
+		return &Report{}, nil
+	}
+
 	report := &Report{
 		OldFile: fileName,
 		NewFile: fileName + SuffixGZ,
@@ -71,18 +75,26 @@ func Compress(fileName string) (*Report, error) {
 // CompressBackground runs a file compression in the background.
 // A report is sent to a provided callback function when compression finishes.
 // Avoid using this on files that may be renamed by another thread.
-func CompressBackground(fileName string, cb func(report *Report)) {
+func CompressBackground(fileName string, callback func(report *Report)) {
+	if fileName == "" {
+		return
+	}
+
 	go func() {
 		report, _ := Compress(fileName)
 
-		if cb != nil {
-			cb(report)
+		if callback != nil {
+			callback(report)
 		}
 	}()
 }
 
 // CompressWithLog is the same as Compress, except it writes a report log instead of returning it.
 func CompressWithLog(fileName string, printf func(msg string, fmt ...any)) {
+	if fileName == "" {
+		return
+	}
+
 	report, _ := Compress(fileName)
 	go Log(report, printf) // in a go routine to avoid possible deadlock with rotatorr.
 }
@@ -115,11 +127,19 @@ func CompressPostRotate(_, fileName string) {
 // the background, but writes a log message when finished instead of a callback.
 // Avoid using this on files that may be renamed by another thread.
 func CompressBackgroundWithLog(fileName string, printf func(msg string, fmt ...any)) {
+	if fileName == "" {
+		return
+	}
+
 	CompressBackground(fileName, func(report *Report) { Log(report, printf) })
 }
 
 // Log sends a report to a custom procedure.
 func Log(report *Report, printf func(msg string, fmt ...any)) {
+	if report == nil || (report.OldFile == "" && report.Error == nil) {
+		return
+	}
+
 	if printf == nil {
 		printf = log.Printf
 	}
