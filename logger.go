@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
@@ -240,7 +241,11 @@ func (l *Logger) openLog() error {
 
 	info, err := l.Stat(l.config.Filepath)
 	if err != nil {
-		// File doesn't exist, or something wrong, truncate it!
+		if !errors.Is(err, fs.ErrNotExist) {
+			return fmt.Errorf("statting logfile %s: %w", l.config.Filepath, err)
+		}
+
+		// File doesn't exist; create it.
 		perm = os.O_WRONLY | os.O_TRUNC | os.O_CREATE
 		l.size = 0
 		l.created = time.Now()

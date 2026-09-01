@@ -4,9 +4,13 @@ linters:
   default: all
   disable:
     - exhaustruct
+    - exhaustruct_v5
     - wsl
     - depguard
     - nlreturn
+    - goconst
+    - gomodguard
+    - embeddedstructfieldcheck
   exclusions:
     presets:
       - common-false-positives
@@ -16,6 +20,7 @@ linters:
         linters:
           - funlen
           - testableexamples
+          - wrapcheck
       - path: cmd/exampleapp
         linters:
           - forbidigo
