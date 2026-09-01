@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -124,6 +125,21 @@ func TestRotateEvery(t *testing.T) {
 
 func TestReopen(t *testing.T) {
 	t.Parallel()
+	testReopen(t, false)
+}
+
+func TestReopenAfterRename(t *testing.T) {
+	t.Parallel()
+
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows cannot rename a log file that is still open")
+	}
+
+	testReopen(t, true)
+}
+
+func testReopen(t *testing.T, renameFirst bool) {
+	t.Helper()
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -151,13 +167,24 @@ func TestReopen(t *testing.T) {
 	assert.Equal(t, len(msg1), wrote)
 
 	rotated := path + ".1"
-	require.NoError(t, os.Rename(path, rotated))
+	if renameFirst {
+		require.NoError(t, os.Rename(path, rotated))
+	}
+
 	require.NoError(t, logger.Reopen())
 
 	msg2 := []byte("after reopen\n")
 	wrote, err = logger.Write(msg2)
 	require.NoError(t, err)
 	assert.Equal(t, len(msg2), wrote)
+
+	if !renameFirst {
+		got, err := os.ReadFile(path)
+		require.NoError(t, err)
+		assert.Equal(t, string(msg1)+string(msg2), string(got))
+
+		return
+	}
 
 	gotOld, err := os.ReadFile(rotated)
 	require.NoError(t, err)
