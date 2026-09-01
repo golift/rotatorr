@@ -120,11 +120,11 @@ func ExampleLogger_Reopen() {
 	signal.Notify(sigc, syscall.SIGHUP)
 
 	go func() {
-		<-sigc
-
-		err := rotator.Reopen()
-		if err != nil {
-			panic(err)
+		for range sigc {
+			err := rotator.Reopen()
+			if err != nil {
+				panic(err)
+			}
 		}
 	}()
 }

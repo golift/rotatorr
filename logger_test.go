@@ -1,6 +1,7 @@
 package rotatorr_test
 
 import (
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
 	"golift.io/rotatorr"
+	"golift.io/rotatorr/filer"
 	"golift.io/rotatorr/introtator"
 	"golift.io/rotatorr/mocks"
 )
@@ -193,4 +195,47 @@ func testReopen(t *testing.T, renameFirst bool) {
 	gotNew, err := os.ReadFile(path)
 	require.NoError(t, err)
 	assert.Equal(t, string(msg2), string(gotNew))
+}
+
+type statErrFiler struct {
+	filer.Filer
+	err error
+}
+
+func (s *statErrFiler) Stat(_ string) (*filer.FileInfo, error) {
+	return nil, s.err
+}
+
+func TestReopenStatErrorDoesNotTruncate(t *testing.T) {
+	t.Parallel()
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockRotatorr := mocks.NewMockRotatorr(mockCtrl)
+	path := filepath.Join(t.TempDir(), "service.log")
+	require.NoError(t, os.WriteFile(path, []byte("keep me\n"), 0o600))
+	mockRotatorr.EXPECT().Dirs(gomock.Any())
+
+	logger, err := rotatorr.New(&rotatorr.Config{
+		Filepath: path,
+		FileSize: rotatorr.NoMaxSize,
+		Rotatorr: mockRotatorr,
+	})
+	require.NoError(t, err)
+
+	defer logger.Close()
+
+	_, err = logger.Write([]byte("keep me too\n"))
+	require.NoError(t, err)
+
+	logger.Filer = &statErrFiler{Filer: filer.Default(), err: fs.ErrPermission}
+
+	err = logger.Reopen()
+	require.ErrorIs(t, err, fs.ErrPermission)
+
+	got, err := os.ReadFile(path)
+	require.NoError(t, err)
+	assert.Contains(t, string(got), "keep me\n")
+	assert.Contains(t, string(got), "keep me too\n")
 }
