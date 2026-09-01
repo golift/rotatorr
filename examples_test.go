@@ -1,6 +1,7 @@
 package rotatorr_test
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -123,7 +124,7 @@ func ExampleLogger_Reopen() {
 		for range sigc {
 			err := rotator.Reopen()
 			if err != nil {
-				panic(err)
+				fmt.Fprintf(os.Stderr, "reopen log: %v\n", err)
 			}
 		}
 	}()
