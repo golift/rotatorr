@@ -92,6 +92,10 @@ func CompressWithLog(fileName string, printf func(msg string, fmt ...any)) {
 // the error to the existing log file (using the global logger).
 // This is safe for use with the timerotator package.
 func CompressBackgroundPostRotate(_, fileName string) {
+	if fileName == "" {
+		return
+	}
+
 	CompressBackgroundWithLog(fileName, nil)
 }
 
@@ -100,6 +104,10 @@ func CompressBackgroundPostRotate(_, fileName string) {
 // the error to the existing log file (using the global logger).
 // This is safe for use with the introtator package.
 func CompressPostRotate(_, fileName string) {
+	if fileName == "" {
+		return
+	}
+
 	CompressWithLog(fileName, nil)
 }
 

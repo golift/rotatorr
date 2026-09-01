@@ -35,3 +35,12 @@ func TestCompress(t *testing.T) {
 	// XXX: check report items.
 	_ = os.Remove(oFile.Name())
 }
+
+func TestCompressPostRotateEmptyFileName(t *testing.T) {
+	t.Parallel()
+
+	require.NotPanics(t, func() {
+		compressor.CompressPostRotate("/unused", "")
+		compressor.CompressBackgroundPostRotate("/unused", "")
+	})
+}
