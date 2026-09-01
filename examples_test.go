@@ -93,11 +93,26 @@ func ExampleNewMust() {
 	}))
 }
 
-// Rotate a log on SIGHUP signal.
+// Rotate a log immediately (rename the live file, open a new one).
 func ExampleLogger_Rotate() {
 	rotator := rotatorr.NewMust(&rotatorr.Config{
 		Filepath: "/var/log/service.log",
 		Rotatorr: &timerotator.Layout{FileCount: 10},
+	})
+	log.SetOutput(rotator)
+
+	_, err := rotator.Rotate()
+	if err != nil {
+		panic(err)
+	}
+}
+
+// Reopen the log on SIGHUP after logrotate has renamed the live file.
+func ExampleLogger_Reopen() {
+	rotator := rotatorr.NewMust(&rotatorr.Config{
+		Filepath: "/var/log/app.log",
+		FileSize: rotatorr.NoMaxSize, // let logrotate own size/count.
+		Rotatorr: &timerotator.Layout{},
 	})
 	log.SetOutput(rotator)
 
@@ -107,7 +122,7 @@ func ExampleLogger_Rotate() {
 	go func() {
 		<-sigc
 
-		_, err := rotator.Rotate()
+		err := rotator.Reopen()
 		if err != nil {
 			panic(err)
 		}

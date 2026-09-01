@@ -3,6 +3,7 @@ package rotatorr_test
 import (
 	"log"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -119,4 +120,50 @@ func TestRotateEvery(t *testing.T) {
 	time.Sleep(time.Second)
 	mockRotatorr.EXPECT().Rotate(testFile.Name())
 	check(logger.Write([]byte(msg))) // 33
+}
+
+func TestReopen(t *testing.T) {
+	t.Parallel()
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockRotatorr := mocks.NewMockRotatorr(mockCtrl)
+	path := filepath.Join(t.TempDir(), "service.log")
+	testFile, err := os.Create(path)
+	require.NoError(t, err)
+	require.NoError(t, testFile.Close())
+
+	mockRotatorr.EXPECT().Dirs(gomock.Any())
+
+	logger, err := rotatorr.New(&rotatorr.Config{
+		Filepath: path,
+		FileSize: rotatorr.NoMaxSize,
+		Rotatorr: mockRotatorr,
+	})
+	require.NoError(t, err)
+
+	defer logger.Close() // release file handle so t.TempDir() cleanup can remove files on Windows
+
+	msg1 := []byte("before reopen\n")
+	wrote, err := logger.Write(msg1)
+	require.NoError(t, err)
+	assert.Equal(t, len(msg1), wrote)
+
+	rotated := path + ".1"
+	require.NoError(t, os.Rename(path, rotated))
+	require.NoError(t, logger.Reopen())
+
+	msg2 := []byte("after reopen\n")
+	wrote, err = logger.Write(msg2)
+	require.NoError(t, err)
+	assert.Equal(t, len(msg2), wrote)
+
+	gotOld, err := os.ReadFile(rotated)
+	require.NoError(t, err)
+	assert.Equal(t, string(msg1), string(gotOld))
+
+	gotNew, err := os.ReadFile(path)
+	require.NoError(t, err)
+	assert.Equal(t, string(msg2), string(gotNew))
 }
