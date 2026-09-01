@@ -355,9 +355,13 @@ func (l *Logger) reopenFile() error {
 	l.lastOpenErr = l.openLog()
 	if l.lastOpenErr != nil {
 		l.lastOpened = time.Now()
+
+		return l.lastOpenErr
 	}
 
-	return l.lastOpenErr
+	l.Interface.Post(l.config.Filepath, "")
+
+	return nil
 }
 
 // close closes the active log file - from a channel message.

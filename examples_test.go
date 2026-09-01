@@ -42,6 +42,10 @@ func Example_postRotateLog() {
 	)
 
 	postRotate := func(fileName, newFile string) {
+		if newFile == "" {
+			return // Reopen, not a rotation.
+		}
+
 		// This must run in a go routine or a deadlock will occur when calling log.Printf.
 		// If you're doing things besides logging, you do not need a go routine, but this
 		// function blocks logs, so make it snappy.
@@ -150,6 +154,10 @@ func Example_compressor() {
 // Example_compressor_log shows how to format a post-rotate compression log line.
 func Example_compressorWithLog() {
 	post := func(_, fileName string) {
+		if fileName == "" {
+			return // Reopen, not a rotation.
+		}
+
 		printf := func(_ string, v ...any) {
 			log.Printf("[Rotatorr] %s", v...)
 		}
@@ -171,6 +179,10 @@ func Example_compressorCaptureOutput() {
 		FileSize: 100 * 1024 * 1024, // 100 megabytes.
 		Rotatorr: &timerotator.Layout{
 			PostRotate: func(_, fileName string) {
+				if fileName == "" {
+					return // Reopen, not a rotation.
+				}
+
 				compressor.CompressBackground(fileName, func(report *compressor.Report) {
 					if report.Error != nil {
 						log.Printf("[Rotatorr] Error: %v", report.Error)

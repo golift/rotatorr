@@ -173,6 +173,7 @@ func testReopen(t *testing.T, renameFirst bool) {
 		require.NoError(t, os.Rename(path, rotated))
 	}
 
+	mockRotatorr.EXPECT().Post(path, "")
 	require.NoError(t, logger.Reopen())
 
 	msg2 := []byte("after reopen\n")
