@@ -23,6 +23,11 @@ const (
 // struct members are omitted.
 const DefaultMaxSize = 10 * 1024 * 1024
 
+// NoMaxSize disables size-based rotation. Pass this as Config.FileSize when an
+// external tool (logrotate) owns the files and the app only Reopen()s on SIGHUP.
+// FileSize 0 with Every 0 still becomes DefaultMaxSize.
+const NoMaxSize int64 = -1
+
 // openRetryInterval is how long to wait before retrying openLog after a failure.
 // Prevents a storm of syscalls when the log file has permission or other persistent errors.
 const openRetryInterval = 10 * time.Second
@@ -40,7 +45,7 @@ type Config struct {
 	FileMode os.FileMode   // POSIX mode for new files.
 	DirMode  os.FileMode   // POSIX mode for new folders.
 	Every    time.Duration // Maximum log file age. Rotate every hour or day, etc.
-	FileSize int64         // Maximum log file size in bytes. Default is unlimited (no rotation).
+	FileSize int64         // Max size in bytes. 0+Every 0 uses DefaultMaxSize; NoMaxSize disables.
 }
 
 // Logger is what you get in return for providing a Config. Use this to set log output.
@@ -52,6 +57,7 @@ type Logger struct {
 	log         chan []byte   // incoming log messages passed across go routines.
 	resp        chan *resp    // response sent back across go routines.
 	signal      chan struct{} // used for Rotate and Close ops.
+	reopen      chan struct{} // used for Reopen ops.
 	size        int64         // the size of the active open file.
 	created     time.Time     // the date the active open file was created.
 	File        *os.File      // The active open file. Useful for direct writing.
@@ -113,6 +119,17 @@ func (l *Logger) Rotate() (int64, error) {
 	return resp.size, resp.err
 }
 
+// Reopen closes the current log file and opens the configured path again.
+// Unlike Rotate, this does not rename or prune files. Use this after an
+// external tool such as logrotate has moved the live file, typically from a SIGHUP handler.
+func (l *Logger) Reopen() error {
+	l.reopen <- struct{}{}
+
+	resp := <-l.resp
+
+	return resp.err
+}
+
 // Close stops the go routines, closes the active log file session and all channels.
 // If another Write() is sent, a panic will ensue.
 func (l *Logger) Close() error {
@@ -132,6 +149,7 @@ func (l *Logger) initialize(ignoreErrors bool) error {
 			l.log = make(chan []byte)
 			l.resp = make(chan *resp)
 			l.signal = make(chan struct{})
+			l.reopen = make(chan struct{})
 
 			go l.processLogChannel()
 		}
@@ -203,6 +221,8 @@ func (l *Logger) processLogChannel() {
 
 			size, err := l.rotate()
 			l.resp <- &resp{size, err}
+		case <-l.reopen:
+			l.resp <- &resp{err: l.reopenFile()}
 		}
 	}
 }
@@ -282,7 +302,7 @@ func (l *Logger) checkAndRotate(size int64) error { //nolint:cyclop
 		return fmt.Errorf("%w: %d>%d", ErrWriteTooLarge, size, l.config.FileSize)
 	}
 
-	if (l.config.FileSize != 0 && l.size+size > l.config.FileSize) ||
+	if (l.config.FileSize > 0 && l.size+size > l.config.FileSize) ||
 		(l.config.Every != 0 && time.Now().After(l.created.Add(l.config.Every))) {
 		_, err := l.rotate()
 		if err != nil {
@@ -319,6 +339,22 @@ func (l *Logger) rotate() (int64, error) {
 	return size, l.lastOpenErr
 }
 
+// reopenFile closes the active log and opens the configured path again.
+// Does not rename or prune backup files.
+func (l *Logger) reopenFile() error {
+	err := l.close()
+	if err != nil {
+		return err
+	}
+
+	l.lastOpenErr = l.openLog()
+	if l.lastOpenErr != nil {
+		l.lastOpened = time.Now()
+	}
+
+	return l.lastOpenErr
+}
+
 // close closes the active log file - from a channel message.
 func (l *Logger) close() error {
 	if l.File == nil {
@@ -342,6 +378,12 @@ func (l *Logger) stop() error {
 	}
 
 	l.log = nil
+
+	if l.reopen != nil {
+		close(l.reopen)
+	}
+
+	l.reopen = nil
 
 	return l.close()
 }

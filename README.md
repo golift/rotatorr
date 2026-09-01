@@ -59,7 +59,7 @@ type Config struct {
 	FileMode os.FileMode   // POSIX mode for new files.
 	DirMode  os.FileMode   // POSIX mode for new folders.
 	Every    time.Duration // Maximum log file age. Rotate every hour or day, etc.
-	FileSize int64         // Maximum log file size in bytes. Default is unlimited (no rotation).
+	FileSize int64         // Max size in bytes. 0+Every 0 uses DefaultMaxSize; NoMaxSize disables.
 	Rotatorr Rotatorr      // REQUIRED: Custom log Rotatorr. Use your own or one of the provided interfaces.
 }
 ```
