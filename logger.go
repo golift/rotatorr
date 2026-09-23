@@ -54,7 +54,7 @@ type Config struct {
 type Logger struct {
 	filer.Filer // overridable file system procedures.
 
-	config      *Config       // incoming configurtation.
+	config      *Config       // incoming configuration.
 	log         chan []byte   // incoming log messages passed across go routines.
 	resp        chan *resp    // response sent back across go routines.
 	signal      chan struct{} // used for Rotate and Close ops.
@@ -263,7 +263,7 @@ func (l *Logger) openLog() error {
 	return nil
 }
 
-// write sends a message into the log file after everyhing checks out - from a channel message.
+// write sends a message into the log file after everything checks out - from a channel message.
 func (l *Logger) write(bytes []byte) (int, error) {
 	err := l.checkAndRotate(int64(len(bytes)))
 	if err != nil {
@@ -397,5 +397,5 @@ func (l *Logger) stop() error {
 	return l.close()
 }
 
-// Our interface must satify an io.WriteCloser.
+// Our interface must satisfy an io.WriteCloser.
 var _ io.WriteCloser = (*Logger)(nil)

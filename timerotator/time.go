@@ -26,7 +26,7 @@ type Layout struct {
 	FileAge    time.Duration // Maximum age of rotated files.
 	UseUTC     bool          // Sets the time zone to UTC when writing Time Formats (backup files).
 	Format     string        // Format for Go Time. Used as the name.
-	Joiner     string        // The string betwene the file name prefix and time stamp. Default: -
+	Joiner     string        // The string between the file name prefix and time stamp. Default: -
 	// Mockable interfaces. Can be used for custom processing. Setting these is very optional.
 	PostRotate func(fileName, newFile string)
 }
@@ -187,5 +187,5 @@ func (l *Layout) getAllLogFiles(fileName string) *backupFiles {
 	return list
 }
 
-// Our interface must satify a rotatorr.Rotatorr.
+// Our interface must satisfy a rotatorr.Rotatorr.
 var _ rotatorr.Rotatorr = (*Layout)(nil)

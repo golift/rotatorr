@@ -6,7 +6,7 @@ import (
 	"golift.io/rotatorr/filer"
 )
 
-// Our interface must satify a filer.Filer.
+// Our interface must satisfy a filer.Filer.
 var _ filer.Filer = (*MyFiler)(nil)
 
 // Create a custom Filer that overrides only the Rename method.
