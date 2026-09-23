@@ -151,5 +151,5 @@ func (l *Layout) getAllLogFiles(fileName string) *backupFiles {
 	return list
 }
 
-// Our interface must satify a rotatorr.Rotatorr.
+// Our interface must satisfy a rotatorr.Rotatorr.
 var _ rotatorr.Rotatorr = (*Layout)(nil)

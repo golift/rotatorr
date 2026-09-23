@@ -23,11 +23,11 @@ func (b *backupFiles) Swap(i, j int) {
 }
 
 // Less is part of the sort.Sort interface.
-// The files are sorted acccording to their time stamp.
+// The files are sorted according to their time stamp.
 // We always want to return the slice with the oldest files first.
 func (b *backupFiles) Less(i, j int) bool {
 	return b.value[i].Before(b.value[j])
 }
 
-// Our backupFiles interface must satify a sort.Interface.
+// Our backupFiles interface must satisfy a sort.Interface.
 var _ sort.Interface = (*backupFiles)(nil)

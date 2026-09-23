@@ -24,5 +24,5 @@ func (b *backupFiles) Less(i, j int) bool {
 	return b.value[i] < b.value[j]
 }
 
-// Our backupFiles interface must satify a sort.Interface.
+// Our backupFiles interface must satisfy a sort.Interface.
 var _ sort.Interface = (*backupFiles)(nil)

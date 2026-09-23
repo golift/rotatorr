@@ -88,7 +88,7 @@ type Layout struct {
 	FileAge    time.Duration // Maximum age of rotated files.
 	UseUTC     bool          // Sets the time zone to UTC when writing Time Formats (backup files).
 	Format     string        // Format for Go Time. Used as the name.
-	Joiner     string        // The string betwene the file name prefix and time stamp. Default: -
+	Joiner     string        // The string between the file name prefix and time stamp. Default: -
 	PostRotate func(fileName, newFile string)
 }
 ```
